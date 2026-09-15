@@ -6,5 +6,5 @@
 
 - [01 — 作業管理導論與需求預測](./Contents/week01-demand-forecasting.md)
 - [02 — 產能規劃與產線平衡](./Contents/week02-line-balancing.md)
-- [03 — 設施選址規劃與多準則評估](./Contents/)
-- [04 — 品質管制與SPC](./Contents/)
+- [03 — 設施選址規劃與多準則評估](./Contents/week03-facility-location.md)
+- [04 — 品質管制與SPC](./Contents/week04-spc.md)
