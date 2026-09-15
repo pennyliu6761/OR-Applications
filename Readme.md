@@ -4,4 +4,4 @@
 
 ## 📚 課程目錄
 
-- [Week 01 — 雲端大腦建置 × Make 自動化 × AI 視覺辨識](./week01/README.md)
+- [01 — 需求預測](./Contents/week01-demand-forecasting.md)
