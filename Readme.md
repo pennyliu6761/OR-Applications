@@ -5,5 +5,5 @@
 ## 📚 課程目錄
 
 - [01 — 需求預測](./Contents/week01-demand-forecasting.md)
-- [02 — 需求預測](./Contents/week01-demand-forecasting.md)
+- [02 — 產線平衡](./Contents/week02-line-balancing.md)
 - [03 — 需求預測](./Contents/week01-demand-forecasting.md)
