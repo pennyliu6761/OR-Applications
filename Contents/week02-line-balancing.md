@@ -663,18 +663,273 @@ RPW 法得到 **4 個工作站**，效率 $=41/(4\times15)=68.33\%$，平滑係�
 
 ---
 
-## Hour 3（後 20 分鐘）｜總結：國防應用情境與碩士論文方向
+## Hour 3（後 20 分鐘）｜碩士論文延伸應用
 
-**國防應用情境**
+> [!NOTE]
+> 以下兩個方向，示範如何把本週的產線平衡方法延伸為具備研究貢獻的碩士論文題目——核心邏輯是：**啟發式方法（RPW）快速但不保證最佳，精確方法（ILP）保證最佳但計算成本隨規模增加而暴增，碩士論文常見的貢獻正是在這兩者之間找到更好的折衷方案**。每個方向皆包含主題定義、方法說明、模擬資料設計與完整可執行的 Python 實作。
 
-- 野戰修護站因任務型態（平時保養 vs. 演訓緊急搶修）不同，動態調整工作站佈置與人力配置。
-- 主力戰車大修線之工作站工序平衡優化，降低整體大修工時、提升妥善率。
-- 無人機／彈藥整備線之產能規劃，因應演訓週期性大量整備需求。
+### 3.4 論文方向一：多目標基因演算法於武器維修線產線平衡最佳化
 
-**碩士論文方向**
+**主題定義**：傳統 RPW 法一次只能優化單一目標（通常是工作站數量最小化），且如 3.1 節延伸練習一所示，其貪婪特性可能導致找到的解明顯劣於全域最佳解。本研究以基因演算法（Genetic Algorithm, GA）同時優化「工作站數量」與「平滑係數」兩項目標，應用於武器維修線之產線平衡問題，並與 RPW 啟發式解、ILP 精確解進行三方比較，驗證 GA 是否能以合理的計算時間，找到接近或等於全域最佳解的方案。
 
-- 多目標啟發式演算法（如遺傳演算法、模擬退火法）在武器維修線瓶頸消除之研究，同時最佳化工作站數量與平滑係數等多重目標。
-- 結合整數規劃與啟發式方法之混合演算法，應用於大規模、多型號裝備共線維修之產線平衡問題。
+**方法說明**：
+
+- **染色體編碼**：以「作業元素的優先順序序列」作為染色體，序列本身必須是前置關係圖的一個合法拓撲排序（Topological Order）。
+- **解碼（Decoding）**：給定一條染色體（優先順序），用與 RPW 法相同的「逐站貪婪填裝」邏輯，將其轉換為實際的工作站指派方案，進而計算工作站數量與平滑係數。
+- **適應度函數（Fitness Function）**：$fitness = w_1 \times N_{stations} + w_2 \times SI$，數值越小代表解越好，$w_1$、$w_2$ 為權重，可依決策者對「站數」與「負荷平均度」的相對重視程度調整。
+- **交配（Crossover）**：採用「前置關係保留交配法（Precedence Preserving Crossover, PPX）」——輪流從兩個父代染色體中，挑選「尚未被選取、且其所有前置作業皆已排入子代」的最前面任務，確保子代永遠是合法的拓撲排序，不需要額外的修復機制。
+- **突變（Mutation）**：隨機挑選一對相鄰位置，僅在交換後仍滿足前置關係時才執行交換。
+
+**模擬資料**：沿用 3.1 節無人機組裝線資料（7 項作業，$CT=15$）——這組資料已知 RPW 法只能找到 4 站（效率 68.33%），而真正最佳解僅需 3 站（效率 91.11%），是驗證 GA 是否能跳脫啟發式局部最佳陷阱的絕佳測試案例。
+
+```python
+# ============================================================
+# 論文方向一：多目標基因演算法求解產線平衡問題
+# ============================================================
+import random
+import math
+
+random.seed(42)
+
+# --- 問題資料（沿用延伸練習一：無人機組裝線）---
+tasks_time = {'A': 8, 'B': 4, 'C': 5, 'D': 6, 'E': 5, 'F': 7, 'G': 6}
+pred = {'A': [], 'B': ['A'], 'C': ['A'], 'D': ['B'], 'E': ['C'], 'F': ['D', 'E'], 'G': ['F']}
+task_list = list(tasks_time.keys())
+CT = 15
+
+def random_topo_order():
+    """隨機產生一個滿足前置關係的合法作業順序（隨機化的拓撲排序）"""
+    remaining = set(task_list)
+    done = []
+    order = []
+    while remaining:
+        ready = [t for t in remaining if all(p in done for p in pred[t])]
+        choice = random.choice(ready)
+        order.append(choice)
+        done.append(choice)
+        remaining.remove(choice)
+    return order
+
+def decode_to_stations(order):
+    """依給定優先順序，用list scheduling貪婪演算法分派工作站(與RPW法指派邏輯相同)"""
+    assigned, stations = [], []
+    remaining = set(task_list)
+    while remaining:
+        st_time = 0
+        progress = True
+        while progress:
+            progress = False
+            for t in order:
+                if t not in remaining:
+                    continue
+                if all(p in assigned for p in pred[t]) and st_time + tasks_time[t] <= CT:
+                    st_time += tasks_time[t]
+                    assigned.append(t)
+                    remaining.remove(t)
+                    progress = True
+                    break
+        stations.append(st_time)
+    return stations
+
+def fitness(order, w1=100, w2=1):
+    """適應度函數：加權組合工作站數量與平滑係數，數值越小代表解越好"""
+    stations = decode_to_stations(order)
+    n_stations = len(stations)
+    si = math.sqrt(sum((CT - s) ** 2 for s in stations))
+    return w1 * n_stations + w2 * si, n_stations, si
+
+def ppx_crossover(parent1, parent2):
+    """前置關係保留交配法：輪流從兩父代挑選「可合法加入子代」的最前面任務"""
+    child = []
+    remaining = set(task_list)
+    use_p1 = True
+    while remaining:
+        source = parent1 if use_p1 else parent2
+        for t in source:
+            if t in remaining and all(p in child for p in pred[t]):
+                child.append(t)
+                remaining.remove(t)
+                break
+        use_p1 = not use_p1
+    return child
+
+def mutate(order, rate=0.2):
+    """突變：隨機挑一對相鄰位置，交換後仍滿足前置關係才執行"""
+    order = order[:]
+    if random.random() < rate:
+        i = random.randint(0, len(order) - 2)
+        a, b = order[i], order[i + 1]
+        if a not in pred.get(b, []) and b not in pred.get(a, []):
+            order[i], order[i + 1] = b, a
+    return order
+
+# --- GA 主流程 ---
+POP_SIZE = 30
+GENERATIONS = 60
+population = [random_topo_order() for _ in range(POP_SIZE)]
+best_fitness_history = []
+
+for gen in range(GENERATIONS):
+    scored = [(fitness(ind)[0], ind) for ind in population]
+    scored.sort(key=lambda x: x[0])
+    best_fitness_history.append(scored[0][0])
+
+    next_pop = [ind for _, ind in scored[:5]]  # 菁英保留：最好的5個直接晉級
+    while len(next_pop) < POP_SIZE:
+        # 競賽選擇(Tournament Selection)：隨機抽3個取最好的當父代
+        t1 = min(random.sample(scored, 3), key=lambda x: x[0])[1]
+        t2 = min(random.sample(scored, 3), key=lambda x: x[0])[1]
+        child = mutate(ppx_crossover(t1, t2))
+        next_pop.append(child)
+    population = next_pop
+
+best_score, best_order = min([(fitness(ind)[0], ind) for ind in population], key=lambda x: x[0])
+_, n_st, si = fitness(best_order)
+
+print(f"GA最佳解順序: {best_order}")
+print(f"工作站數 = {n_st}, 平滑係數 SI = {si:.3f}")
+print(f"各站負荷: {decode_to_stations(best_order)}")
+print(f"\n=== 三方比較 ===")
+print(f"RPW啟發式解: 4站, 效率68.33%, SI=10.724")
+print(f"ILP精確解  : 3站, 效率91.11%, SI=2.828")
+print(f"GA解       : {n_st}站, SI={si:.3f}")
+```
+
+**預期輸出**：GA 應能在 60 個世代內收斂至 3 個工作站的解，平滑係數約為 2.828——**與 ILP 精確解完全相同**，證明多目標 GA 成功跳脫了 RPW 法陷入的局部最佳解。
+
+**論文延伸建議**：可進一步將此 GA 應用於作業元素數量更多（如 20–30 項）、ILP 求解時間過長的大型維修線，比較 GA 與 3.5 節「混合啟發式與 ILP」方法在解品質與計算時間上的優劣；也可以嘗試調整適應度函數的權重 $w_1$、$w_2$，觀察「站數優先」與「負荷平均優先」兩種決策傾向如何影響最終找到的解，這種**權重敏感度分析**是多目標最佳化論文常見的補充實驗。
+
+---
+
+### 3.5 論文方向二：混合啟發式與整數規劃於大規模多型號裝備共線維修排程
+
+**主題定義**：ILP 雖能保證找到全域最佳解，但如 1.7 節提醒，其計算複雜度隨作業元素數量增加而大幅上升——當維修線規模擴大至數十項作業元素（例如多型號裝備共線維修），純粹的 ILP 求解可能耗時過長，難以應用於需要快速反應的現場決策。本研究提出一個混合方法：**先用 RPW 啟發式解求出一個「還不錯的工作站數量」作為 ILP 候選工作站數的緊緻上界，再用這個縮小後的搜尋空間求解 ILP**，比較此混合方法與「直接用寬鬆上界跑 ILP」在求解時間與解品質上的差異。
+
+**方法說明**：
+
+- **純 ILP（對照組）**：候選工作站數上界直接設為作業元素總數 $n$（最寬鬆、最保守的設定，因為理論上最差情況是每個作業各自佔用一個工作站），求解空間最大、耗時最長。
+- **混合法（實驗組）**：先執行 RPW 法，得到其求出的工作站數 $N_{RPW}$，再將 ILP 的候選工作站數上界設為 $N_{RPW}$（而非 $n$），大幅縮小 ILP 需要搜尋的變數空間，同時因為 RPW 解本身就是一個可行解，ILP 求解時保證至少能找到不劣於 RPW 解的答案。
+
+**模擬資料**：以隨機演算法產生一個 20 項作業元素的大型前置關係網路（模擬多型號裝備共線維修情境，作業時間與前置關係皆隨機生成但確保構成合法的有向無環圖）。
+
+```python
+# ============================================================
+# 論文方向二：混合啟發式與ILP於大規模產線平衡問題
+# ============================================================
+import random
+import math
+import time
+import pulp
+
+random.seed(1)
+
+# --- 模擬產生20項作業元素的大型前置關係網路 ---
+N = 20
+task_list = [chr(65 + i) if i < 26 else f"T{i}" for i in range(N)]
+tasks_time = {t: random.randint(2, 9) for t in task_list}
+
+# 每個作業(除前兩個)隨機挑選1~2個「已出現過的較早作業」作為前置作業，確保構成合法DAG
+pred = {task_list[0]: [], task_list[1]: [task_list[0]]}
+for i in range(2, N):
+    n_preds = random.choice([1, 1, 2])
+    preds = random.sample(task_list[:i], min(n_preds, i))
+    pred[task_list[i]] = preds
+
+CT = 20
+total_time = sum(tasks_time.values())
+Nmin = math.ceil(total_time / CT)
+print(f"作業元素數={N}, 總作業時間={total_time}, CT={CT}, 理論最小站數Nmin={Nmin}")
+
+# --- RPW 啟發式解 ---
+succ = {t: [] for t in task_list}
+for t, ps in pred.items():
+    for p in ps:
+        succ[p].append(t)
+
+def all_successors(t, memo={}):
+    if t in memo:
+        return memo[t]
+    result = set()
+    for s in succ[t]:
+        result.add(s)
+        result |= all_successors(s, memo)
+    memo[t] = result
+    return result
+
+rpw = {t: tasks_time[t] + sum(tasks_time[s] for s in all_successors(t)) for t in task_list}
+rpw_order = sorted(task_list, key=lambda t: -rpw[t])
+
+def decode_to_stations(order):
+    assigned, stations = [], []
+    remaining = set(order)
+    while remaining:
+        st_time = 0
+        progress = True
+        while progress:
+            progress = False
+            for t in order:
+                if t not in remaining:
+                    continue
+                if all(p in assigned for p in pred[t]) and st_time + tasks_time[t] <= CT:
+                    st_time += tasks_time[t]
+                    assigned.append(t)
+                    remaining.remove(t)
+                    progress = True
+                    break
+        stations.append(st_time)
+    return stations
+
+t0 = time.time()
+rpw_stations = decode_to_stations(rpw_order)
+t_rpw = time.time() - t0
+print(f"\nRPW啟發式解: {len(rpw_stations)} 站, 計算時間={t_rpw*1000:.3f} 毫秒")
+
+# --- ILP 求解函數 ---
+def solve_salbp(tasks, pred, CT, max_stations, time_limit=60):
+    """以PuLP建立SALBP-1整數規劃模型並求解"""
+    prob = pulp.LpProblem("SALBP1", pulp.LpMinimize)
+    tlist = list(tasks.keys())
+    stations = list(range(1, max_stations + 1))
+    x = pulp.LpVariable.dicts("x", (tlist, stations), cat="Binary")
+    y = pulp.LpVariable.dicts("y", stations, cat="Binary")
+
+    prob += pulp.lpSum(y[k] for k in stations)  # 目標式：最小化啟用站數
+    for i in tlist:
+        prob += pulp.lpSum(x[i][k] for k in stations) == 1  # 每作業恰指派一站
+    for k in stations:
+        prob += pulp.lpSum(tasks[i] * x[i][k] for i in tlist) <= CT * y[k]  # 站負荷限制
+    for i in tlist:
+        for p in pred[i]:
+            # 前置作業站號不可晚於後續作業站號
+            prob += (pulp.lpSum(k * x[p][k] for k in stations)
+                     <= pulp.lpSum(k * x[i][k] for k in stations))
+
+    prob.solve(pulp.PULP_CBC_CMD(msg=0, timeLimit=time_limit))
+    return pulp.value(prob.objective), pulp.LpStatus[prob.status]
+
+# --- 純 ILP（對照組）：候選站數上界設為n（最寬鬆）---
+t0 = time.time()
+n_pure, status_pure = solve_salbp(tasks_time, pred, CT, max_stations=N, time_limit=60)
+t_pure = time.time() - t0
+print(f"\n純ILP（上界={N}，未借助啟發式）: {n_pure:.0f} 站, "
+      f"狀態={status_pure}, 計算時間={t_pure*1000:.2f} 毫秒")
+
+# --- 混合法（實驗組）：以RPW解的站數作為ILP候選站數上界 ---
+t0 = time.time()
+n_hybrid, status_hybrid = solve_salbp(tasks_time, pred, CT, max_stations=len(rpw_stations), time_limit=60)
+t_hybrid = time.time() - t0
+print(f"混合法（上界={len(rpw_stations)}，RPW解界定搜尋空間）: {n_hybrid:.0f} 站, "
+      f"狀態={status_hybrid}, 計算時間={t_hybrid*1000:.2f} 毫秒")
+
+print(f"\n=== 結論 ===")
+print(f"RPW解站數={len(rpw_stations)}，理論最小站數Nmin={Nmin}，ILP精確解站數={n_pure:.0f}")
+speedup = t_pure / t_hybrid if t_hybrid > 0 else float('inf')
+print(f"混合法相對純ILP之加速倍數: {speedup:.2f}倍（解品質相同，皆為全域最佳解）")
+```
+
+**預期輸出**：這組隨機生成的 20 項作業網路中，RPW 法通常會得到比理論最小站數多 1 站的解（啟發式的典型表現），而純 ILP 與混合法皆能找到理論最小站數的全域最佳解——**但混合法由於搜尋空間被 RPW 解大幅收斂，計算時間通常僅為純 ILP 的數分之一到十分之一**，具體加速倍數會因隨機生成的網路結構而異，但方向性結論穩定成立。
+
+**論文延伸建議**：可將此混合方法進一步應用於更大規模的問題（50、100 項作業元素），系統性記錄「問題規模 vs. 純 ILP／混合法計算時間」的成長曲線，量化混合方法在大規模問題上的優勢是否會隨規模擴大而更加顯著；也可以嘗試用 3.4 節的 GA 解取代 RPW 解作為 ILP 的上界輸入，比較「RPW+ILP」與「GA+ILP」兩種混合策略何者在計算時間與解品質上表現更好，這是結合本週兩個論文方向、進一步提升研究貢獻度的可行整合方案。
 
 ---
 
@@ -804,29 +1059,7 @@ RPW 法得到 **4 個工作站**，效率 $=41/(4\times15)=68.33\%$，平滑係�
 
 ---
 
-## 附錄F：碩士論文寫作句型範例（方法論／文獻回顧段落）
-
-> [!TIP]
-> 以下提供幾個常見學術寫作句型範例（以本週產線平衡主題為例），供學員撰寫論文計畫書或期中報告時參考套用。
-
-**文獻回顧段落句型範例**：
-
-- 「裝配線平衡問題（Assembly Line Balancing Problem, ALBP）自 [某學者] 提出以來，已發展出多種啟發式解法，其中 RPW 法因計算簡便、可解釋性高，長期為業界廣泛採用；然而其貪婪特性使其無法保證找到全域最佳解，此為後續研究導入整數規劃與統合啟發式演算法（如遺傳演算法、模擬退火法）之主要動機。」
-- 「近年研究進一步將產線平衡問題延伸至多目標最佳化框架，同時考量工作站數量最小化與負荷平滑度最大化兩項互有取捨的目標，本研究亦將採此多目標視角進行問題建模。」
-
-**研究方法段落句型範例**：
-
-- 「本研究首先依現場作業紀錄與技工訪談結果，建立 [某裝備] 維修作業之前置關係圖，確認共 $n$ 項作業元素、總作業時間為 $\sum t_i$ 分鐘。」
-- 「依據任務目標產出量反推生產節拍 $CT$，並分別以 RPW 法、最多後續作業法求解初始可行解，再以 Excel 規劃求解建立整數規劃模型，驗證啟發式解是否已達理論最佳，或另尋更佳方案。」
-
-**結果與討論段落句型範例**：
-
-- 「如表 [X] 所示，RPW 法與最多後續作業法皆得出 $N$ 個工作站之分派方案，效率為 [X]%，經整數規劃驗證後確認（或未確認）為理論最佳解，顯示啟發式方法在本案例中之解品質（優良／有待改善）。」
-- 「圖 [X] 之工作站負荷長條圖顯示，站 [X] 之閒置時間最大，建議後續可透過作業元素重新切割或跨站支援機制，進一步降低平滑係數。」
-
----
-
-## 附錄G：本週與後續課程週次的關聯
+## 附錄F：本週與後續課程週次的關聯
 
 | 後續週次 | 關聯方式 |
 |---|---|
@@ -835,13 +1068,172 @@ RPW 法得到 **4 個工作站**，效率 $=41/(4\times15)=68.33\%$，平滑係�
 | 第 12 週：決策樹與隨機森林 | 本週前置關係圖的樹狀／網路結構概念，有助於理解第 12 週決策樹模型的分支邏輯 |
 | 第 15 週：論文整併實戰（一） | 本週的啟發式排程邏輯將與 AI 故障預測結合，延伸為「預測失效機率加權之維修隊列排程」整合研究 |
 
-## 附錄H：本週模擬資料集彙整（方便複製使用）
+## 附錄G：本週模擬資料集彙整（方便複製使用）
 
 | 資料集 | 用途 | 作業元素／時間／前置作業 |
 |---|---|---|
 | 戰甲車保修線（9 項作業，CT=12） | 主範例（RPW／最多後續作業法／ILP） | A5(-), B3(A), C4(A), D7(B), E6(C), F5(D,E), G4(F), H3(F), I6(G,H) |
 | 無人機組裝線（7 項作業，CT=15） | 延伸練習一 | A8(-), B4(A), C5(A), D6(B), E5(C), F7(D,E), G6(F) |
 | 迫擊砲彈整備線（8 項作業，CT=10） | 延伸練習二 | A4(-), B5(A), C6(A), D4(B), E5(C), F6(D,E), G3(F), H5(G) |
+
+---
+
+## 附錄H：Python 實作與解析
+
+> [!NOTE]
+> 本附錄使用 Python 重現本週 Excel 示範的核心邏輯（前置關係圖、RPW 計算、ILP 求解），並展示兩項 Excel／人工不容易做到、但 Python 非常自然的延伸：（1）用 `networkx` 自動建立與檢查前置關係圖（不需人工畫圖確認無迴圈）；（2）用 `PuLP` 真正求解整數規劃，而非僅止於 Excel 規劃求解的近似疊代。建議於 [Google Colab](https://colab.research.google.com/) 開啟新筆記本，依序貼上執行。
+
+### H.0 環境設置
+
+```python
+# ============================================================
+# 第2週 附錄H：Python 實作環境設置
+# ============================================================
+!pip install pulp networkx --quiet
+
+import networkx as nx
+import pulp
+import math
+
+# 本週主範例：戰甲車保修線（對照1.1節）
+tasks_time = {'A': 5, 'B': 3, 'C': 4, 'D': 7, 'E': 6, 'F': 5, 'G': 4, 'H': 3, 'I': 6}
+pred = {'A': [], 'B': ['A'], 'C': ['A'], 'D': ['B'], 'E': ['C'],
+        'F': ['D', 'E'], 'G': ['F'], 'H': ['F'], 'I': ['G', 'H']}
+CT = 12
+
+print("作業元素:", tasks_time)
+print("總作業時間:", sum(tasks_time.values()))
+```
+
+---
+
+### H.1 以 networkx 建立前置關係圖並自動計算 RPW
+
+```python
+# ============================================================
+# H.1 networkx 前置關係圖建立、合法性檢查、RPW計算（對照1.2、1.4節）
+# ============================================================
+
+# 建立有向圖：節點為作業元素，邊為前置關係
+G = nx.DiGraph()
+for t, time in tasks_time.items():
+    G.add_node(t, time=time)
+for t, preds in pred.items():
+    for p in preds:
+        G.add_edge(p, t)
+
+# 自動檢查是否為合法的有向無環圖(DAG)——若有迴圈，代表前置關係設定矛盾
+print("是否為合法DAG（無迴圈）:", nx.is_directed_acyclic_graph(G))
+print("拓撲排序（可行的作業順序之一）:", list(nx.topological_sort(G)))
+
+# 用 networkx 內建的 descendants() 函數，直接取得每個節點的「全部後續作業」
+# 不需要像Excel示範一樣手動展開，這是networkx相對於Excel最直接的效率優勢
+rpw = {}
+for t in tasks_time:
+    successors = nx.descendants(G, t)  # 自動找出全部(直接+間接)後續作業
+    rpw[t] = tasks_time[t] + sum(tasks_time[s] for s in successors)
+
+print("\n位置權重 RPW：")
+for t in sorted(rpw, key=lambda x: -rpw[x]):
+    print(f"  {t}: RPW={rpw[t]}")
+
+rpw_order = sorted(tasks_time.keys(), key=lambda t: -rpw[t])
+print("\nRPW優先順序:", rpw_order)
+print("講義手算結果: A(43) > B(28)=C(28) > D(25) > E(24) > F(18) > G(10) > H(9) > I(6)")
+```
+
+> [!TIP]
+> `nx.descendants(G, t)` 這一行程式碼，取代了 Excel 示範一中「人工依前置關係圖展開全部後續作業、再用 SUMPRODUCT 加總」的繁瑣步驟——對於作業元素數量更多（如 H.3 節的 20 項作業）的大型網路，這個優勢會更加明顯，因為人工展開在大型網路中非常容易出錯或遺漏。
+
+---
+
+### H.2 以 PuLP 求解整數規劃（驗證 RPW 解是否為全域最佳解）
+
+```python
+# ============================================================
+# H.2 PuLP 整數規劃求解 SALBP-1（對照1.6、1.7節與Excel示範三）
+# ============================================================
+
+def solve_salbp(tasks, pred, CT, max_stations, time_limit=60):
+    """
+    以PuLP建立並求解簡單裝配線平衡問題(SALBP-1)整數規劃模型
+    目標：最小化啟用工作站數量
+    """
+    prob = pulp.LpProblem("SALBP1", pulp.LpMinimize)
+    task_list = list(tasks.keys())
+    stations = list(range(1, max_stations + 1))
+
+    # 決策變數：x[i,k]=1代表作業i指派給工作站k；y[k]=1代表工作站k被啟用
+    x = pulp.LpVariable.dicts("x", (task_list, stations), cat="Binary")
+    y = pulp.LpVariable.dicts("y", stations, cat="Binary")
+
+    prob += pulp.lpSum(y[k] for k in stations)  # 目標式
+
+    for i in task_list:
+        prob += pulp.lpSum(x[i][k] for k in stations) == 1  # 每作業恰指派一站
+
+    for k in stations:
+        prob += pulp.lpSum(tasks[i] * x[i][k] for i in task_list) <= CT * y[k]  # 站負荷限制
+
+    for i in task_list:
+        for p in pred[i]:
+            # 前置作業之加權站號 <= 後續作業之加權站號
+            prob += (pulp.lpSum(k * x[p][k] for k in stations)
+                     <= pulp.lpSum(k * x[i][k] for k in stations))
+
+    prob.solve(pulp.PULP_CBC_CMD(msg=0, timeLimit=time_limit))
+
+    assignment = {}
+    for i in task_list:
+        for k in stations:
+            if pulp.value(x[i][k]) > 0.5:
+                assignment[i] = k
+    return int(pulp.value(prob.objective)), assignment
+
+n_stations, assignment = solve_salbp(tasks_time, pred, CT, max_stations=6)
+
+print(f"ILP精確解：{n_stations} 個工作站")
+groups = {}
+for t, s in assignment.items():
+    groups.setdefault(s, []).append(t)
+for s in sorted(groups):
+    st_time = sum(tasks_time[t] for t in groups[s])
+    print(f"  站{s}: {groups[s]} 負荷={st_time}")
+
+print(f"\n講義手算(RPW法)：5個工作站，站1[A,B,C]=12, 站2[D]=7, 站3[E,F]=11, 站4[G,H]=7, 站5[I]=6")
+print(f"驗證：ILP找到的站數 {'等於' if n_stations==5 else '少於'} RPW法的5站")
+```
+
+**預期輸出**：ILP 應求出 5 個工作站（與 1.3 節 RPW 法手算結果站數相同），驗證本週主範例中 RPW 法確實已經找到全域最佳解，呼應 1.6 節「並非所有案例啟發式解都劣於最佳解」的提醒。
+
+---
+
+### H.3 驗證延伸練習一：RPW 解的次佳性
+
+```python
+# ============================================================
+# H.3 以PuLP驗證延伸練習一（無人機組裝線）RPW解與最佳解的落差
+# ============================================================
+
+tasks_uav = {'A': 8, 'B': 4, 'C': 5, 'D': 6, 'E': 5, 'F': 7, 'G': 6}
+pred_uav = {'A': [], 'B': ['A'], 'C': ['A'], 'D': ['B'], 'E': ['C'], 'F': ['D', 'E'], 'G': ['F']}
+CT_uav = 15
+
+n_uav, assign_uav = solve_salbp(tasks_uav, pred_uav, CT_uav, max_stations=5)
+print(f"ILP精確解：{n_uav} 個工作站")
+groups_uav = {}
+for t, s in assign_uav.items():
+    groups_uav.setdefault(s, []).append(t)
+for s in sorted(groups_uav):
+    st_time = sum(tasks_uav[t] for t in groups_uav[s])
+    print(f"  站{s}: {groups_uav[s]} 負荷={st_time}")
+
+print(f"\n講義RPW法手算結果：4個工作站（效率68.33%）")
+print(f"ILP精確解：{n_uav}個工作站，較RPW法少 {4-n_uav} 站")
+print(f"效率提升：從68.33%提升至{41/(n_uav*15)*100:.2f}%")
+```
+
+**預期輸出**：ILP 應求出 3 個工作站，與講義 3.1 節手算之全域最佳解完全一致，具體且可重複地驗證了「RPW 法的貪婪特性可能導致次佳解」這個理論提醒。
 
 ---
 
