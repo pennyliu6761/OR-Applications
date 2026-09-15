@@ -12,3 +12,4 @@
 - [06 — 排程與指派問題](./Contents/week06-scheduling.md)
 - [07 — 專案管理](./Contents/week07-cpm-pert.md)
 - [08 — 等候線理論](./Contents/week08-queueing.md)
+- [09 — 資料前處理與特徵工程](./Contents/week09-data-preprocessing.md)
