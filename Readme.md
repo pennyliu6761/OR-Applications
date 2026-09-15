@@ -10,5 +10,5 @@
 - [04 — 品質管制與SPC](./Contents/week04-spc.md)
 - [05 — 存貨管制](./Contents/week05-inventory.md)
 - [06 — 排程與指派問題](./Contents/week06-scheduling.md)
-- [07 — 專案管理](./Contents/week07-spc.md)
+- [07 — 專案管理](./Contents/week07-cpm-pert.md)
 - [08 — 等候線理論](./Contents/week08-spc.md)
