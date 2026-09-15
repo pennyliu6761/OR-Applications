@@ -641,18 +641,190 @@ $$
 
 ---
 
-## Hour 3（後 20 分鐘）｜總結：國防應用情境與碩士論文方向
+## Hour 3（後 20 分鐘）｜碩士論文延伸應用
 
-**國防應用情境**
+> [!NOTE]
+> 以下兩個方向，示範如何把本週的選址方法延伸為具備研究貢獻的碩士論文題目——核心邏輯是：**AHP 假設決策者能給出精確的成對比較數值，重心法／韋伯問題只能決定「單一」設施的位置，但實務上判斷經常帶有模糊性、且後勤網路經常需要同時決定「多個」設施的位置**。每個方向皆包含主題定義、方法說明、模擬資料設計與完整可執行的 Python 實作。
 
-- 戰略彈藥庫、野戰雷達站、後勤轉運中心之基地選址評選。
-- 多重補給節點（如多個彈藥庫服務多個作戰區）之非線性最小運輸距離網路規劃。
-- 新建基地選址評估中，安全性、政治敏感度等質化因素與運輸成本等量化因素之綜合決策。
+### 3.4 論文方向一：模糊層級分析法（Fuzzy AHP）於防禦陣地設施配置之應用
 
-**碩士論文方向**
+**主題定義**：傳統 AHP 要求決策者對每一組成對比較給出一個精確數值（如「安全性比交通便利性重要 3 倍」），但實務上專家的判斷經常帶有「大概是 3 倍左右，但也可能介於 2 到 4 倍之間」的模糊性，尤其在防禦陣地選址這種涉及高度不確定情資判斷的情境更是如此。本研究以三角模糊數（Triangular Fuzzy Number, TFN）取代傳統 AHP 的精確判斷值，比較模糊 AHP 與傳統 AHP 算出的權重差異，並進行不確定程度的敏感度分析。
 
-- 模糊多準則決策方法（Fuzzy AHP／TOPSIS）於防禦陣地設施配置之應用，處理決策者判斷本身存在的模糊性與不確定性。
-- 結合重心法／韋伯問題之連續選址模型與 AHP 質化評估之混合方法論，應用於多層級後勤網路（如彈藥庫—轉運站—前線補給點）之選址與配置整合研究。
+**方法說明**：
+
+- **三角模糊數（TFN）**：以 $(l,m,u)$ 三個數值表示一個模糊判斷，$m$ 為最可能值、$l$、$u$ 分別為悲觀與樂觀邊界。例如傳統 AHP 中「強度 3」可轉換為 TFN $(2,3,4)$，代表「最可能是 3，但介於 2 到 4 之間都算合理」。
+- **Buckley 模糊 AHP 法**：
+  1. 對每一列（每個準則）計算其與其他準則比較值的**模糊幾何平均數** $r_i = (\prod_j \tilde{a}_{ij})^{1/n}$。
+  2. 計算模糊權重 $\tilde{w}_i = r_i \otimes (r_1 \oplus r_2 \oplus \cdots \oplus r_n)^{-1}$。
+  3. 以**重心法解模糊化（Centroid Defuzzification）** $w_i = (l_i+m_i+u_i)/3$，將模糊權重轉為單一明確數值，再正規化。
+- 此方法相對於另一常見的 Chang's Extent Analysis 法，**較不容易產生「部分準則權重被算成 0」的異常結果**（Chang's 法在文獻中常被指出這項限制），因此本研究採用 Buckley 法。
+
+**模擬資料**：沿用本週 1.5 節彈藥庫選址 AHP 範例之準則層成對比較矩陣，將每個精確判斷值轉換為三角模糊數。
+
+```python
+# ============================================================
+# 論文方向一：Buckley模糊AHP法
+# ============================================================
+import numpy as np
+
+def crisp_to_tfn(v, spread=1):
+    """將傳統AHP的精確判斷值，轉換為三角模糊數(l,m,u)
+       spread控制模糊不確定的範圍，spread越大代表判斷越不確定"""
+    if v == 1:
+        return (1, 1, 1)
+    elif v > 1:
+        return (max(v-spread, 1), v, v+spread)
+    else:
+        recip = 1/v
+        return (1/(recip+spread), 1/recip, 1/max(recip-spread, 1))
+
+def fuzzy_geo_mean_row(row):
+    """計算一列模糊數的模糊幾何平均數"""
+    l = np.prod([x[0] for x in row]) ** (1/len(row))
+    m = np.prod([x[1] for x in row]) ** (1/len(row))
+    u = np.prod([x[2] for x in row]) ** (1/len(row))
+    return (l, m, u)
+
+def buckley_fuzzy_ahp(crisp_matrix, spread=1):
+    """完整Buckley模糊AHP流程：轉TFN -> 模糊幾何平均 -> 模糊權重 -> 解模糊化 -> 正規化"""
+    n = len(crisp_matrix)
+    fuzzy_matrix = [[crisp_to_tfn(crisp_matrix[i][j], spread) for j in range(n)] for i in range(n)]
+    r = [fuzzy_geo_mean_row(fuzzy_matrix[i]) for i in range(n)]
+    sum_l = sum(x[0] for x in r)
+    sum_m = sum(x[1] for x in r)
+    sum_u = sum(x[2] for x in r)
+    # 模糊除法（分母的l,u對調，反映模糊數除法的不確定性傳遞方向）
+    w = [(ri[0]/sum_u, ri[1]/sum_m, ri[2]/sum_l) for ri in r]
+    crisp_w = [(l+m+u)/3 for l, m, u in w]  # 重心法解模糊化
+    return np.array(crisp_w) / sum(crisp_w)
+
+# 準則層成對比較矩陣（對照1.5節）
+crisp_matrix = [
+    [1, 3, 5, 7],
+    [1/3, 1, 3, 5],
+    [1/5, 1/3, 1, 2],
+    [1/7, 1/5, 1/2, 1],
+]
+labels = ['安全性', '交通便利性', '建置成本', '擴充彈性']
+
+# --- 標準不確定程度(spread=1) ---
+weights_fuzzy = buckley_fuzzy_ahp(crisp_matrix, spread=1)
+print("=== Fuzzy AHP 權重（spread=1，標準不確定程度）===")
+for lab, w in zip(labels, weights_fuzzy):
+    print(f"  {lab}: {w:.4f}")
+print("對照傳統AHP權重: 0.5628, 0.2671, 0.1079, 0.0622")
+
+# --- 敏感度分析：擴大模糊不確定範圍(spread=2)，觀察權重是否更趨保守/分散 ---
+weights_fuzzy_wide = buckley_fuzzy_ahp(crisp_matrix, spread=2)
+print("\n=== Fuzzy AHP 權重（spread=2，擴大不確定程度）===")
+for lab, w in zip(labels, weights_fuzzy_wide):
+    print(f"  {lab}: {w:.4f}")
+```
+
+**預期輸出**：標準不確定程度（spread=1）下，Fuzzy AHP 權重應與傳統 AHP 相當接近（約 0.559、0.268、0.109、0.064），顯示當決策者判斷的模糊程度不大時，Fuzzy AHP 會收斂至與傳統 AHP 相近的結果；當不確定程度擴大（spread=2）時，權重會出現更明顯的調整（安全性權重略降、交通便利性權重略升），反映模糊判斷的不確定性確實會實質影響最終權重分配。
+
+**論文延伸建議**：可進一步邀請多位領域專家分別填寫模糊成對比較（每人給出各自認為合理的 $l,m,u$），比較「個別專家模糊判斷的變異程度」與「最終 Fuzzy AHP 權重的穩定性」之間的關係；也可以將 Fuzzy AHP 得出的權重，代入本週 3.4 節之前的方案層評估，與傳統 AHP 之最終建議方案排序進行比較，觀察模糊化是否會改變最終的選址建議。
+
+---
+
+### 3.5 論文方向二：多設施選址模型於多階層後勤網路配置之研究
+
+**主題定義**：本週 1.1–1.3 節的重心法與韋伯問題，都只能決定**單一**新設施的最佳位置。但實務上的後勤網路經常需要同時決定**多個**設施的位置（例如同時新建 2 座轉運站服務多個補給節點），且必須同時決定「每個節點該由哪一個轉運站服務」——這是一個位置與分配必須同時最佳化的組合問題。本研究運用 Cooper 位置-分配演算法（Location-Allocation Heuristic）求解多設施選址問題，並量化「增加設施數量」對總運輸成本的邊際改善效果。
+
+**方法說明**：
+
+- **問題結構**：給定 $n$ 個需求點與其權重，求解 $k$ 個新設施的位置，以及每個需求點應由哪個設施服務，使總加權運輸距離最小。
+- **Cooper 位置-分配演算法**（疊代兩步驟直到收斂）：
+  1. **分配步驟**：在目前的設施位置下，將每個需求點分配給距離最近的設施。
+  2. **選址步驟**：固定分配結果，對每個設施，用本週 1.3 節的 Weiszfeld 演算法，僅針對「被分配給它」的需求點，重新求解該設施的最佳位置（單設施韋伯問題）。
+  3. 重複步驟 1–2，直到分配結果不再改變（收斂）。
+- 由於此演算法容易陷入局部最佳解，實務上須**以多組不同的隨機初始位置重複求解，取其中總成本最低者**，這是本週示範程式碼採用「多重啟動（Multi-Restart）」策略的原因。
+
+> [!NOTE]
+> 眼尖的學員可能已經注意到：Cooper 演算法「先分配、後選址、反覆疊代」的邏輯，與第 11 週即將學到的 **K-Means 分群演算法**（先分群、後更新群心、反覆疊代）在數學結構上幾乎完全相同——事實上，多設施選址問題與分群問題本質上是同一類最佳化問題，只是應用情境不同。這是本課程「作業管理」與「AI 大數據分析」兩階段方法論相互呼應的具體例證之一。
+
+**模擬資料**：合併本週主範例（5 個彈藥庫補給基地）與延伸練習一（5 個通信前哨站）之座標與需求量，共 10 個需求點，求解 2 個與 3 個新設施的最佳配置。
+
+```python
+# ============================================================
+# 論文方向二：Cooper位置-分配演算法求解多設施選址問題
+# ============================================================
+import numpy as np
+
+np.random.seed(42)
+
+# 合併主範例(彈藥庫)與延伸練習一(通信站)之需求點資料
+points = [
+    ("B1", 30, 120, 800), ("B2", 90, 110, 650), ("B3", 130, 60, 500),
+    ("B4", 60, 40, 900), ("B5", 150, 130, 300),
+    ("P1", 20, 50, 400), ("P2", 70, 90, 600), ("P3", 100, 30, 300),
+    ("P4", 40, 10, 500), ("P5", 120, 80, 200),
+]
+coords = np.array([(x, y) for _, x, y, _ in points])
+weights = np.array([w for _, _, _, w in points])
+
+def weiszfeld_single(coords, weights, x0, y0, iters=100):
+    """單設施韋伯問題疊代解法（對照1.3節）"""
+    x, y = x0, y0
+    for _ in range(iters):
+        d = np.sqrt((coords[:, 0]-x)**2 + (coords[:, 1]-y)**2)
+        d = np.where(d < 1e-9, 1e-9, d)  # 避免除以零
+        x = np.sum(weights*coords[:, 0]/d) / np.sum(weights/d)
+        y = np.sum(weights*coords[:, 1]/d) / np.sum(weights/d)
+    return x, y
+
+def multi_facility_location(coords, weights, k, n_restarts=20, iters=30):
+    """Cooper位置-分配演算法，以多重啟動策略避免陷入局部最佳解"""
+    best_cost = np.inf
+    best_solution = None
+    n = len(coords)
+    for _ in range(n_restarts):
+        init_idx = np.random.choice(n, k, replace=False)
+        facilities = coords[init_idx].astype(float)
+        for _ in range(iters):
+            # 分配步驟
+            dists = np.array([[np.hypot(coords[i,0]-f[0], coords[i,1]-f[1])
+                                for f in facilities] for i in range(n)])
+            assignment = np.argmin(dists, axis=1)
+            # 選址步驟：對每個設施個別求解單設施韋伯問題
+            new_facilities = facilities.copy()
+            for j in range(k):
+                mask = assignment == j
+                if mask.sum() == 0:
+                    continue
+                nx_, ny_ = weiszfeld_single(coords[mask], weights[mask], *facilities[j], iters=50)
+                new_facilities[j] = [nx_, ny_]
+            if np.allclose(new_facilities, facilities, atol=1e-6):
+                facilities = new_facilities
+                break
+            facilities = new_facilities
+        dists = np.array([[np.hypot(coords[i,0]-f[0], coords[i,1]-f[1])
+                            for f in facilities] for i in range(n)])
+        assignment = np.argmin(dists, axis=1)
+        total_cost = sum(weights[i]*dists[i, assignment[i]] for i in range(n))
+        if total_cost < best_cost:
+            best_cost = total_cost
+            best_solution = (facilities.copy(), assignment.copy())
+    return best_solution, best_cost
+
+# --- 比較 k=1（單設施）、k=2、k=3 的總成本 ---
+for k in [1, 2, 3]:
+    (facilities, assignment), total_cost = multi_facility_location(coords, weights, k=k, n_restarts=20)
+    print(f"\n=== k={k} 個設施 ===")
+    print(f"總加權運輸距離 = {total_cost:.2f}")
+    for j, f in enumerate(facilities):
+        members = [points[i][0] for i in range(len(points)) if assignment[i] == j]
+        print(f"  設施{j+1}: 座標=({f[0]:.2f}, {f[1]:.2f}), 服務點={members}")
+    if k == 1:
+        cost_k1 = total_cost
+    else:
+        improvement = (1 - total_cost/cost_k1) * 100
+        print(f"  相對單設施改善幅度: {improvement:.2f}%")
+```
+
+**預期輸出**：單一設施（$k=1$）的總加權距離最高；增加至 2 個設施可降低約 34%；再增加至 3 個設施可再降低約 29%——這組數字提供了「增設幾座轉運站在成本效益上最划算」的量化依據，若進一步將設施建置固定成本（如第 5 週 EOQ 概念中的固定成本觀念）一併納入總成本函數，就能求解出真正的「總成本最小」設施數量，而不只是「運輸距離最小」。
+
+**論文延伸建議**：可將本方法與第 2 週學過的整數規劃技巧結合，把設施數量 $k$ 本身也納入決策變數（而非像本示範一樣，由研究者事先指定 $k$ 後個別求解），建立完整的「設施數量與位置同時最佳化」模型；也可以進一步加入「每個設施最大服務容量限制」，將問題延伸為更貼近實務的**容量限制設施選址問題（Capacitated Facility Location Problem）**。
 
 ---
 
@@ -735,30 +907,7 @@ $$
 
 ---
 
-## 附錄F：碩士論文寫作句型範例（方法論／文獻回顧段落）
-
-> [!TIP]
-> 以下提供幾個常見學術寫作句型範例（以本週選址主題為例），供學員撰寫論文計畫書或期中報告時參考套用。
-
-**文獻回顧段落句型範例**：
-
-- 「設施選址問題之研究，早期多聚焦於重心法、負荷距離分析等成本導向之量化方法；隨著多準則決策理論之發展，AHP、TOPSIS 等方法逐漸被廣泛應用於整合量化與質化因素之複合型選址決策問題。」
-- 「近年研究進一步將模糊集合理論導入 AHP 架構，以因應決策者判斷本身存在的語意模糊性與不確定性，此為 Fuzzy AHP 方法發展之主要動機。」
-
-**研究方法段落句型範例**：
-
-- 「本研究首先以重心法計算 [某設施] 之理論最佳選址座標，並於鄰近區域勘查 [N] 個實際可用候選地點，以負荷距離分析法進行初步排序。」
-- 「為驗證重心法近似解與真正最小運輸成本解之差異，本研究進一步以 Excel 規劃求解建立非線性最佳化模型，求解韋伯問題之精確最佳解。」
-- 「針對縮小後之候選地點，本研究建立 AHP 層級結構，邀集 [N] 位領域專家填寫成對比較問卷，計算各準則與方案權重，並以一致性比率 C.R. 檢驗判斷矩陣之邏輯一致性。」
-
-**結果與討論段落句型範例**：
-
-- 「如表 [X] 所示，候選地點 [X] 之負荷距離分數最低，且與重心法理論最佳座標之距離差距僅 [X] 公里，顯示該地點在成本面具備相對優勢。」
-- 「經 AHP 綜合評估，候選地點 [X] 雖於 [某準則] 表現相對較弱，惟因 [某準則] 權重較高且表現優異，最終綜合評分仍為最佳，顯示多準則決策方法能有效捕捉單一指標排序法所忽略之權衡關係。」
-
----
-
-## 附錄G：本週與後續課程週次的關聯
+## 附錄F：本週與後續課程週次的關聯
 
 | 後續週次 | 關聯方式 |
 |---|---|
@@ -766,7 +915,7 @@ $$
 | 第 11 週：非監督學習（聚類分群） | 重心法之加權平均概念與 K-Means 分群演算法之群心更新機制高度相似，皆屬於「最小化加權平方距離」之最佳化問題 |
 | 第 16 週：論文整併實戰（二） | 本週選址方法將與第 3 週（本週）、第 5 週存貨管理、第 14 週 AI 需求預測整合，成為「智慧庫存動態補給與空間決策」專論之選址模組 |
 
-## 附錄H：本週模擬資料集彙整（方便複製使用）
+## 附錄G：本週模擬資料集彙整（方便複製使用）
 
 | 資料集 | 用途 | 資料內容 |
 |---|---|---|
@@ -775,6 +924,131 @@ $$
 | 彈藥庫AHP選址（3個候選地點×4準則） | 主範例（AHP） | 準則：安全性/交通便利性/建置成本/擴充彈性；詳見 1.5 節成對比較矩陣 |
 | 通信中繼站（5個前哨站） | 延伸練習一 | P1(20,50,400), P2(70,90,600), P3(100,30,300), P4(40,10,500), P5(120,80,200)；候選地點M(60,50)/N(80,60) |
 | 野戰醫院AHP選址（3準則） | 延伸練習二 | 準則：安全距離/後送便利性/水電基礎設施；詳見 3.2 節成對比較矩陣 |
+
+---
+
+## 附錄H：Python 實作與解析
+
+> [!NOTE]
+> 本附錄使用 Python 重現本週 Excel 示範的核心邏輯（重心法、韋伯問題、AHP），並展示兩項 Excel 不容易做到、但 Python 非常自然的延伸：（1）用 `numpy.linalg.eig` 計算 AHP 的**精確**特徵向量權重，取代 Excel 示範五「正規化—平均法」的近似解法；（2）用 `scipy.optimize.minimize` 求解韋伯問題，取代 Excel 規劃求解的疊代近似。建議於 [Google Colab](https://colab.research.google.com/) 開啟新筆記本，依序貼上執行。
+
+### H.0 環境設置與資料
+
+```python
+# ============================================================
+# 第3週 附錄H：Python 實作環境設置
+# ============================================================
+import numpy as np
+from scipy.optimize import minimize
+
+# 本週主範例：彈藥庫轉運中心之5個補給基地（對照1.1節）
+points = [
+    ("B1", 30, 120, 800), ("B2", 90, 110, 650), ("B3", 130, 60, 500),
+    ("B4", 60, 40, 900), ("B5", 150, 130, 300),
+]
+coords = np.array([(x, y) for _, x, y, _ in points])
+weights = np.array([w for _, _, _, w in points])
+
+print("需求點座標與權重:")
+for name, x, y, w in points:
+    print(f"  {name}: ({x},{y}) 需求量={w}")
+```
+
+---
+
+### H.1 重心法與負荷距離分析（NumPy 向量化計算）
+
+```python
+# ============================================================
+# H.1 重心法（對照1.1節）與負荷距離分析（對照1.2節）
+# ============================================================
+
+# 重心法：NumPy可直接以向量運算完成加權平均，取代Excel逐列SUMPRODUCT
+x_bar = np.sum(coords[:, 0] * weights) / np.sum(weights)
+y_bar = np.sum(coords[:, 1] * weights) / np.sum(weights)
+print(f"重心法座標: ({x_bar:.2f}, {y_bar:.2f})")
+print("講義手算: (78.25, 86.51)")
+
+# 負荷距離分析：一次計算所有候選地點對所有需求點的距離矩陣
+candidates = {"X": (80, 90), "Y": (100, 70), "Z": (60, 100)}
+for name, (cx, cy) in candidates.items():
+    dists = np.sqrt((coords[:, 0]-cx)**2 + (coords[:, 1]-cy)**2)
+    ld_score = np.sum(weights * dists)
+    print(f"候選地點{name}({cx},{cy}): LD分數 = {ld_score:.2f}")
+print("講義手算: X=162990.07, Y=179860.93, Z=172171.00")
+```
+
+---
+
+### H.2 韋伯問題：scipy.optimize 求解非線性選址
+
+```python
+# ============================================================
+# H.2 韋伯問題（對照1.3節，取代Excel規劃求解）
+# ============================================================
+
+def total_weighted_distance(xy):
+    """目標函數：加權距離總和（韋伯問題之待最小化目標）"""
+    x, y = xy
+    return np.sum(weights * np.sqrt((coords[:, 0]-x)**2 + (coords[:, 1]-y)**2))
+
+# 以重心法座標作為起始點，呼叫scipy.optimize.minimize求解非線性最佳化
+x0 = np.array([x_bar, y_bar])
+result = minimize(total_weighted_distance, x0, method='Nelder-Mead')
+
+print(f"韋伯問題最佳解: ({result.x[0]:.2f}, {result.x[1]:.2f})")
+print(f"最小加權距離總和: {result.fun:.2f}")
+print("講義手算(Weiszfeld疊代法): (79.43, 91.54), 總距離=162940.31")
+
+improvement = (total_weighted_distance(x0) - result.fun) / total_weighted_distance(x0) * 100
+print(f"\n相對重心法之改善幅度: {improvement:.3f}%（驗證1.3節「差距約0.2%」的說法）")
+```
+
+---
+
+### H.3 AHP：精確特徵向量法 vs. Excel 近似法
+
+```python
+# ============================================================
+# H.3 AHP精確特徵向量法（對照1.5節，取代Excel示範五的近似解法）
+# ============================================================
+
+# 準則層成對比較矩陣（對照1.5節）
+crisp_matrix = np.array([
+    [1, 3, 5, 7],
+    [1/3, 1, 3, 5],
+    [1/5, 1/3, 1, 2],
+    [1/7, 1/5, 1/2, 1],
+])
+labels = ['安全性', '交通便利性', '建置成本', '擴充彈性']
+
+# 用numpy.linalg.eig計算矩陣的特徵值與特徵向量
+eigvals, eigvecs = np.linalg.eig(crisp_matrix)
+
+# 理論上一致性矩陣的最大特徵值對應的特徵向量，即為權重向量
+max_idx = np.argmax(eigvals.real)
+lambda_max = eigvals[max_idx].real
+principal_eigvec = eigvecs[:, max_idx].real
+weights_exact = principal_eigvec / principal_eigvec.sum()  # 正規化使總和為1
+
+print("=== 精確特徵向量法 ===")
+for lab, w in zip(labels, weights_exact):
+    print(f"  {lab}: {w:.4f}")
+print(f"lambda_max = {lambda_max:.4f}")
+
+n = 4
+CI = (lambda_max - n) / (n - 1)
+CR = CI / 0.90
+print(f"C.I. = {CI:.4f}, C.R. = {CR:.4f}")
+
+print("\n對照 Excel近似法（正規化—平均法）:")
+print("  安全性=0.5628, 交通便利性=0.2671, 建置成本=0.1079, 擴充彈性=0.0622")
+print("  lambda_max=4.0687, C.I.=0.0229, C.R.=0.0254")
+print("\n觀察：兩種方法結果非常接近，說明Excel的近似解法在實務上已經足夠精確，")
+print("這也是為什麼多數教科書仍教授手算可行的近似法，而非要求人工計算特徵值分解。")
+```
+
+**預期輸出**：精確特徵向量法與 Excel 近似法算出的權重應非常接近（差異通常在小數點後第二位），驗證 1.5 節 Excel 示範五所採用的簡化解法確實是一個高品質的近似方法。
 
 ---
 
