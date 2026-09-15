@@ -1334,18 +1334,198 @@ $$
 > [!TIP]
 > 若您正在構思碩士論文題目，這個案例研究的敘事結構（背景 → 資料蒐集 → 方法選擇邏輯 → 參數估計 → 驗證與監控 → 管理決策應用）本身就是一份「方法論（Methodology）」章節的雛形，可以直接套用在自己的研究情境上。
 
-## Hour 3（後 20 分鐘）｜總結：國防應用情境與碩士論文方向
+## Hour 3（後 20 分鐘）｜碩士論文延伸應用
 
-**國防應用情境**
+> [!NOTE]
+> 以下兩個方向，示範如何把本週的預測方法延伸為具備研究貢獻的碩士論文題目——核心邏輯是：**傳統平滑法計算快速、參數意義明確，但假設固定不變；機器學習方法能捕捉更複雜的樣態，卻需要更多資料才能發揮優勢；追蹤訊號則提供了一個「什麼時候該懷疑模型已經過時」的量化依據**。每個方向皆包含主題定義、方法說明、模擬資料設計與完整可執行的 Python 實作。
 
-- 國防航材、油料之月／季補給需求預測（適用 SES／Holt，視是否有明顯趨勢而定）。
-- 具規律演訓週期之彈藥、耗材消耗預測（適用 Winters 三參數法）。
-- 突發任務下的應急後勤動態需求預測（此類情境不規則性極高，傳統平滑法效果有限，可作為第 14 週 AI 序列模型的應用引子）。
+### 3.6 論文方向一：傳統平滑法與機器學習方法之修護料件需求預測比較研究
 
-**碩士論文方向**
+**主題定義**：業界與學界近年普遍假設「AI／機器學習方法一定優於傳統統計方法」，但預測學文獻中著名的 M4 預測競賽（M4 Forecasting Competition）結果顯示，**在資料量有限、序列結構相對單純的情境下，傳統統計方法經常表現得與複雜機器學習方法相當、甚至更好**。本研究以修護料件月需求資料為例，系統性比較 Holt 雙參數法與隨機森林迴歸（以落後期特徵作為輸入）兩種方法的樣本外（Out-of-Sample）預測績效，並探討造成差異的可能原因，為「什麼情境下該選擇傳統方法、什麼情境下該投入機器學習方法」提供實證依據。
 
-- 結合長期（傳統平滑法）與短期（AI 序列學習模型）預測方法之修護料件需求推估比較研究。
-- 以追蹤訊號作為模型自動切換機制（例如：正常時用 SES、TS 超標時自動切換 Holt）之動態預測框架設計。
+**方法說明**：
+
+- **落後特徵工程（Lag Feature Engineering）**：將時間序列問題轉化為監督式學習問題，以過去 $k$ 期的實際值（$y_{t-1}, y_{t-2}, \ldots, y_{t-k}$）與時間索引 $t$ 作為特徵，當期值 $y_t$ 作為預測目標。
+- **隨機森林迴歸**：集成多棵決策樹（原理將於第 12 週詳述），能捕捉特徵間的非線性關係，是機器學習預測方法中相對容易上手、可解釋性也較高的選擇。
+- **遞迴多步預測（Recursive Multi-step Forecasting）**：由於測試集的未來真實值在預測當下是未知的，多步預測必須把「前一步的預測值」當作下一步的落後特徵輸入，而非使用真實值——這是機器學習方法應用於時間序列預測時最容易被忽略、卻至關重要的實作細節。
+- **公平比較原則**：兩種方法的參數（Holt 的 $\alpha,\beta$；隨機森林的樹數、深度）皆只能用訓練集資料調整，測試集僅用於最終績效評估，避免資料洩漏（呼應第 9 週的核心觀念）。
+
+**模擬資料**：模擬一條 60 個月的修護料件需求序列，前 48 期為訓練集、後 12 期為測試集，資料本身呈現平穩的線性上升趨勢加上隨機雜訊（相對單純的序列結構，刻意用來測試「簡單序列是否真的需要複雜模型」）。
+
+```python
+# ============================================================
+# 論文方向一：傳統平滑法 vs. 機器學習方法之樣本外預測比較
+# ============================================================
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_percentage_error, mean_squared_error
+
+np.random.seed(42)
+
+# --- 模擬資料：60個月修護料件需求，含緩慢上升趨勢+雜訊 ---
+n = 60
+t = np.arange(n)
+trend = 500 + 3 * t
+noise = np.random.normal(0, 25, n)
+demand = np.round(trend + noise).astype(float)
+
+train_size = 48
+train, test = demand[:train_size], demand[train_size:]
+print(f"訓練集: {len(train)}期，測試集: {len(test)}期")
+
+# --- 方法A：Holt雙參數法（傳統統計方法對照組）---
+def holt_forecast(train, test, alpha, beta):
+    L, T = [train[0]], [train[1] - train[0]]
+    for tt in range(1, len(train)):
+        Lt = alpha * train[tt] + (1 - alpha) * (L[tt-1] + T[tt-1])
+        Tt = beta * (Lt - L[tt-1]) + (1 - beta) * T[tt-1]
+        L.append(Lt); T.append(Tt)
+    # 多步預測：僅用訓練集學到的L,T做遞迴外推，不使用測試集真實值
+    return [L[-1] + (i+1) * T[-1] for i in range(len(test))]
+
+# 網格搜尋最佳(alpha,beta)：僅用訓練集內部誤差搜尋，測試集保持未見
+best_sse, best_params = np.inf, (0.3, 0.1)
+for a in np.arange(0.1, 1.0, 0.1):
+    for b in np.arange(0.1, 1.0, 0.1):
+        L, T = [train[0]], [train[1]-train[0]]
+        sse = 0
+        for tt in range(1, len(train)):
+            sse += (train[tt] - (L[tt-1]+T[tt-1])) ** 2
+            Lt = a*train[tt] + (1-a)*(L[tt-1]+T[tt-1])
+            Tt = b*(Lt-L[tt-1]) + (1-b)*T[tt-1]
+            L.append(Lt); T.append(Tt)
+        if sse < best_sse:
+            best_sse, best_params = sse, (a, b)
+
+holt_preds = holt_forecast(train, test, *best_params)
+holt_rmse = np.sqrt(mean_squared_error(test, holt_preds))
+holt_mape = mean_absolute_percentage_error(test, holt_preds) * 100
+print(f"\nHolt法（最佳α,β={best_params}）: RMSE={holt_rmse:.2f}, MAPE={holt_mape:.2f}%")
+
+# --- 方法B：隨機森林迴歸（機器學習方法對照組）---
+def make_lag_features(series, n_lags=3):
+    df = pd.DataFrame({'y': series})
+    for lag in range(1, n_lags + 1):
+        df[f'lag{lag}'] = df['y'].shift(lag)
+    df['t'] = np.arange(len(series))
+    return df.dropna().reset_index(drop=True)
+
+n_lags = 3
+df_feat = make_lag_features(np.concatenate([train, test]), n_lags)
+train_feat = df_feat[df_feat['t'] < train_size - n_lags]
+feature_cols = [f'lag{i}' for i in range(1, n_lags+1)] + ['t']
+
+rf = RandomForestRegressor(n_estimators=200, max_depth=4, random_state=42)
+rf.fit(train_feat[feature_cols], train_feat['y'])
+
+# 遞迴多步預測：每一步用「前一步的預測值」而非真實值作為下一步的落後特徵
+history = list(train[-n_lags:])
+rf_preds = []
+for i in range(len(test)):
+    feat = {f'lag{j+1}': history[-(j+1)] for j in range(n_lags)}
+    feat['t'] = train_size + i
+    pred = rf.predict(pd.DataFrame([feat])[feature_cols])[0]
+    rf_preds.append(pred)
+    history.append(pred)
+
+rf_rmse = np.sqrt(mean_squared_error(test, rf_preds))
+rf_mape = mean_absolute_percentage_error(test, rf_preds) * 100
+print(f"隨機森林法: RMSE={rf_rmse:.2f}, MAPE={rf_mape:.2f}%")
+
+print(f"\n=== 樣本外預測績效總表 ===")
+print(f"{'方法':<12}{'RMSE':>10}{'MAPE':>10}")
+print(f"{'Holt法':<12}{holt_rmse:>10.2f}{holt_mape:>9.2f}%")
+print(f"{'隨機森林':<12}{rf_rmse:>10.2f}{rf_mape:>9.2f}%")
+```
+
+**預期輸出**：在這組相對單純（平穩線性趨勢＋隨機雜訊）的序列上，**Holt 法的 RMSE 與 MAPE 通常明顯優於隨機森林**（約 20 vs. 約 60）。這個結果**並非隨機森林方法本身有缺陷**，而是反映了一個重要的方法論教訓：隨機森林等樹狀模型的預測值僅能落在訓練資料出現過的數值範圍內（樹狀模型的預測本質是「歷史資料的分段平均」，難以外推超出訓練範圍的趨勢），當序列存在持續上升的趨勢時，這個特性會讓樹狀模型系統性低估未來值；而 Holt 法明確將「趨勢」建模為一個可以線性外推的參數，天生更適合處理這類資料。
+
+**論文延伸建議**：可進一步在**不同資料特性**（如加入更明顯的非線性轉折、更多雜訊、或更長的訓練期）下重複此比較實驗，探討機器學習方法在什麼條件下才能展現優勢（如序列存在複雜的非線性交互作用、或有大量外部解釋變數可用時）；也可以將隨機森林替換為梯度提升樹（Gradient Boosting）或第 14 週即將學到的 LSTM，建立更完整的「傳統統計法 vs. 機器學習法 vs. 深度學習法」三方比較框架，這正是「結合長期與短期預測方法之比較研究」最完整的實現方式。
+
+---
+
+### 3.7 論文方向二：追蹤訊號驅動之動態模型自動切換框架
+
+**主題定義**：傳統做法是「一次設定好平滑常數，之後就固定套用」，但實務上的軍事後勤情境經常因任務型態改變（如演訓開始、編裝調整）而出現**結構性斷點（Structural Break）**——此時固定參數的模型會持續產生系統性誤差，直到人工發現並重新校準。本研究設計一套以追蹤訊號為觸發機制的動態預測框架：當追蹤訊號持續超出管制門檻時，系統自動判定發生結構性斷點，並以斷點後的近期資料重新校準預測水準，探討此框架相對於「固定參數、從不調整」之靜態模型，能否顯著降低斷點後的預測誤差。
+
+**方法說明**：
+
+- **斷點偵測邏輯**：追蹤訊號 $TS_t$ 僅用「自上次校準以來」累積的誤差計算（而非用全部歷史誤差），這樣才能正確反映「模型在目前這個狀態下」的表現，避免斷點發生前的舊誤差持續拖累判斷。
+- **自動重新校準**：一旦 $|TS_t|$ 超出門檻（本示範採用 1.8 節的 ±4 門檻），系統以斷點附近的近期實際值平均，重新設定預測水準，並重新開始累積下一輪的追蹤訊號。
+- **與 1.9 節「方法選擇指南」的呼應**：這個框架本質上是把「人工判斷追蹤訊號、決定是否調整模型」的管理流程（1.8 節提醒的管理動作）自動化、系統化，是把課堂理論轉化為可部署之決策支援系統的具體範例。
+
+**模擬資料**：模擬一條 22 期的序列，前 12 期穩定圍繞水準 500 波動，第 13 期起因任務量遽增而跳升至新水準 650（模擬演訓開始導致的結構性斷點）。
+
+```python
+# ============================================================
+# 論文方向二：追蹤訊號驅動之動態模型自動切換框架
+# ============================================================
+import numpy as np
+
+np.random.seed(7)
+
+# --- 模擬資料：前12期穩定於500，第13期起因任務量遽增跳升至650 ---
+level1 = np.random.normal(500, 10, 12)
+level2 = np.random.normal(650, 10, 10)
+data = np.round(np.concatenate([level1, level2]), 1).tolist()
+print("模擬資料（第13期起發生結構性斷點）:")
+print(data)
+
+def adaptive_forecast(data, alpha=0.3, ts_threshold=4):
+    """動態預測框架：追蹤訊號超出門檻時，自動偵測斷點並重新校準預測水準"""
+    F = [data[0]]
+    errors = []
+    last_reset = 0  # 記錄上次校準的時間點，之後的TS只用這之後的誤差計算
+
+    for t in range(1, len(data)):
+        forecast = F[t-1]
+        error = data[t] - forecast
+        errors.append(error)
+
+        # 追蹤訊號僅用「自上次校準以來」的誤差計算
+        recent_errors = errors[last_reset:]
+        abs_errs = [abs(e) for e in recent_errors]
+        ts = sum(recent_errors) / np.mean(abs_errs) if len(recent_errors) >= 2 and np.mean(abs_errs) > 0 else 0
+
+        if abs(ts) > ts_threshold:
+            # 偵測到結構性斷點：以近3期實際值平均重新校準預測水準
+            new_level = np.mean(data[max(0, t-2):t+1])
+            F.append(new_level)
+            last_reset = t
+            print(f"  [第{t+1}期] 追蹤訊號={ts:.2f}，偵測到結構性斷點，重新校準預測水準至{new_level:.1f}")
+        else:
+            F.append(alpha * data[t] + (1-alpha) * F[t-1])
+
+    return F
+
+print("\n=== 動態預測框架執行過程 ===")
+F_adaptive = adaptive_forecast(data)
+
+def ses_forecast(data, alpha):
+    F = [data[0]]
+    for t in range(1, len(data)):
+        F.append(alpha * data[t-1] + (1-alpha) * F[t-1])
+    return F
+
+F_static = ses_forecast(data, 0.3)
+
+def mape(actual, forecast, start_idx):
+    errs = [abs(actual[t]-forecast[t])/actual[t]*100 for t in range(start_idx, len(actual))]
+    return np.mean(errs)
+
+# 專注比較「斷點後」(第13期起)的預測表現，這才是動態框架應該展現優勢之處
+mape_adaptive_post = mape(data, F_adaptive, 12)
+mape_static_post = mape(data, F_static, 12)
+print(f"\n=== 斷點後（第13-22期）預測誤差比較 ===")
+print(f"動態切換框架 MAPE = {mape_adaptive_post:.2f}%")
+print(f"靜態SES(不校準) MAPE = {mape_static_post:.2f}%")
+print(f"改善幅度 = {(1 - mape_adaptive_post/mape_static_post)*100:.2f}%")
+```
+
+**預期輸出**：動態框架應能在第 13 期（真實斷點發生的當期）立即偵測到追蹤訊號超標並完成重新校準，斷點後的 MAPE 應較靜態 SES 大幅改善（約 35–40%）。**同時執行結果通常也會在第 6 期附近出現一次「假警報」**（此時序列僅是隨機雜訊、並無真實斷點，卻恰好使追蹤訊號短暫超標）——這個誤觸發現象本身就是重要的研究發現：**追蹤訊號機制存在偽陽性風險，門檻設定過於敏感會導致模型頻繁誤判、過度調整**，這正是 1.8 節「過度調整（Overadjustment）」風險在動態框架中的具體展現，也是本方向後續研究應該處理的核心議題。
+
+**論文延伸建議**：可進一步研究「如何降低誤觸發率」，例如要求追蹤訊號**連續兩期以上**超標才觸發校準（而非單期超標立即反應），比較不同觸發規則在「偵測真實斷點的靈敏度」與「避免誤觸發的穩健度」之間的權衡（這是訊號偵測理論中經典的靈敏度—特異度取捨，Sensitivity-Specificity Trade-off）；也可以將此框架與第 15 週「預測性維護」的故障預警邏輯整合，探討「需求斷點偵測」與「裝備故障預警」是否能共用同一套異常偵測基礎架構。
 
 ---
 
@@ -1405,28 +1585,7 @@ $$
 | 「預測（Forecast）」 vs 「配適（Fit）」 | 預測是針對「尚未發生」的未來期別；配適是拿模型已經估計出的參數，回頭套用在「已經發生」的歷史期別上，用來檢驗模型解釋歷史資料的能力好壞（本週誤差指標的計算，嚴格來說都是在評估「配適」優劣，而不是真正未知的「預測」表現） |
 | 「季節性（Seasonality）」 vs 「季節調整（Seasonal Adjustment）」 | 季節性是資料本身具有的規律波動特性；季節調整是一種統計處理程序，把季節性從原始資料中「移除」，以便觀察資料背後真正的趨勢與循環 |
 
-## 附錄H：碩士論文寫作句型範例（方法論／文獻回顧段落）
-
-> [!TIP]
-> 以下提供幾個常見的學術寫作句型範例（以本週需求預測主題為例），供學員撰寫論文計畫書或期中報告時參考套用，實際使用時請依自己的研究資料與方法調整內容細節，避免直接照抄。
-
-**文獻回顧段落句型範例**：
-
-- 「時間序列預測方法自 [某學者] 提出以來，已廣泛應用於 [某產業／領域] 之需求規劃問題，其中又以指數平滑法族群（SES、Holt、Winters）因計算效率高、參數意義明確，成為實務界最常採用的基礎方法之一。」
-- 「相較於傳統平滑法僅能捕捉資料本身的水準、趨勢與季節結構，近年研究逐漸轉向結合機器學習方法（如 [某演算法]），以捕捉更複雜的非線性關係，惟其模型可解釋性相對較低，此為本研究後續章節欲進一步比較之重點。」
-
-**研究方法段落句型範例**：
-
-- 「本研究蒐集 [某單位／品項] 自 [起始年月] 至 [結束年月] 共 $n$ 期之歷史消耗資料，依序檢視資料是否具備趨勢與季節成分，並據此選用單一指數平滑法、Holt 雙參數法或 Winters 三參數法作為候選預測模型。」
-- 「各模型之平滑常數（$\alpha$、$\beta$、$\gamma$）係以歷史資料之誤差平方和最小化為目標，透過非線性規劃求解（本研究採用 Excel 規劃求解 GRG 非線性演算法）估計取得。」
-- 「模型績效評估採用平均絕對誤差（MAD）、均方根誤差（RMSE）與平均絕對百分比誤差（MAPE）三項指標，並輔以追蹤訊號監控模型是否於樣本期間內出現系統性偏誤。」
-
-**結果與討論段落句型範例**：
-
-- 「如表 [X] 所示，就 RMSE 指標而言，[某方法] 之預測表現優於 [另一方法]，推論其原因可能為 [資料是否具趨勢／季節等特性] 之緣故。」
-- 「圖 [X] 顯示追蹤訊號於第 [t] 期後開始超出 ±4 之管制界限，顯示模型自該期起出現系統性低估，本研究進一步將此現象歸因於 [任務量增加／編裝調整等外部因素]，並據此建議後續應採行動態參數調整機制。」
-
-## 附錄I：本週與後續課程週次的關聯
+## 附錄H：本週與後續課程週次的關聯
 
 > [!NOTE]
 > 本講義開頭提到「需求預測是整個作業管理系統的起點」，以下具體列出本週內容如何在後續週次被引用或延伸，幫助學員建立整門課程的知識地圖。
@@ -1440,7 +1599,7 @@ $$
 | 第 14 週：ARIMA 與 LSTM | 本週介紹的傳統平滑法將與 AI 序列模型直接比較效能，銜接「從統計方法升級到深度學習」的課程主軸 |
 | 第 16 週：論文整併實戰（二） | 本週學到的需求預測技術，將作為第 16 週「智慧庫存動態補給」整合研究架構中的第一個模組 |
 
-## 附錄J：本週模擬資料集彙整（方便複製使用）
+## 附錄I：本週模擬資料集彙整（方便複製使用）
 
 為方便學員日後在自己的電腦上重新練習，以下把本週用到的六組模擬資料集彙整於同一處：
 
@@ -1457,12 +1616,12 @@ $$
 > [!TIP]
 > 建議把這張表格複製到自己的筆記本或 Excel 檔案的第一個分頁，作為本週所有練習的「資料庫」，往後複習時不需要再回頭翻找散落在各個小節中的資料。
 
-## 附錄K：Python 實作與解析
+## 附錄J：Python 實作與解析
 
 > [!NOTE]
 > 本附錄使用 Python 重現本週 Excel 示範的三個主範例（SES、Holt、Winters），並展示兩項 Excel 不容易做到、但 Python 非常自然的延伸：（1）用迴圈或最佳化演算法自動搜尋最佳平滑常數，不需要手動開規劃求解；（2）呼叫業界標準套件 `statsmodels` 的內建函數，並解釋其與本週手算公式數字略有差異的原因。建議於 [Google Colab](https://colab.research.google.com/) 開啟新筆記本，依序貼上執行。
 
-### K.0 環境設置
+### J.0 環境設置
 
 ```python
 # ============================================================
@@ -1491,7 +1650,7 @@ print(fuel)
 
 ---
 
-### K.1 以 Python 重現本週手算範例
+### J.1 以 Python 重現本週手算範例
 
 ```python
 # ============================================================
@@ -1564,7 +1723,7 @@ print("講義手算  : None,362.03,188.31,442.98,211.22,376.96,196.75,462.46,226
 
 ---
 
-### K.2 使用業界標準套件 `statsmodels`
+### J.2 使用業界標準套件 `statsmodels`
 
 ```python
 # ============================================================
@@ -1600,7 +1759,7 @@ print([round(x, 2) for x in model_hw.fittedvalues])
 
 ---
 
-### K.3 Excel 做不到的延伸：自動搜尋最佳平滑常數
+### J.3 Excel 做不到的延伸：自動搜尋最佳平滑常數
 
 ```python
 # ============================================================
@@ -1640,7 +1799,7 @@ plt.show()
 
 ---
 
-### K.4 視覺化比較圖表
+### J.4 視覺化比較圖表
 
 ```python
 # ============================================================
@@ -1664,7 +1823,7 @@ plt.show()
 
 ---
 
-### K.5 誤差指標與追蹤訊號自動化計算
+### J.5 誤差指標與追蹤訊號自動化計算
 
 ```python
 # ============================================================
