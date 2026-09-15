@@ -1457,6 +1457,269 @@ $$
 > [!TIP]
 > 建議把這張表格複製到自己的筆記本或 Excel 檔案的第一個分頁，作為本週所有練習的「資料庫」，往後複習時不需要再回頭翻找散落在各個小節中的資料。
 
+## 附錄K：Python 實作與解析
+
+> [!NOTE]
+> 本附錄使用 Python 重現本週 Excel 示範的三個主範例（SES、Holt、Winters），並展示兩項 Excel 不容易做到、但 Python 非常自然的延伸：（1）用迴圈或最佳化演算法自動搜尋最佳平滑常數，不需要手動開規劃求解；（2）呼叫業界標準套件 `statsmodels` 的內建函數，並解釋其與本週手算公式數字略有差異的原因。建議於 [Google Colab](https://colab.research.google.com/) 開啟新筆記本，依序貼上執行。
+
+### K.0 環境設置
+
+```python
+# ============================================================
+# 第1週 附錄K：Python 實作環境設置
+# ============================================================
+
+# Colab 預設字型不含中文，繪圖時中文會變成方框，需先安裝並指定中文字型
+!apt-get -qq install fonts-noto-cjk > /dev/null 2>&1
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib
+
+# 指定使用思源黑體（Noto Sans CJK），並關閉負號顯示異常的問題
+matplotlib.rcParams['font.sans-serif'] = ['Noto Sans CJK JT', 'Noto Sans CJK TC']
+matplotlib.rcParams['axes.unicode_minus'] = False
+
+# 本週主範例：油料消耗資料（對照1.3–1.5節）
+fuel = [480, 495, 470, 510, 500, 525, 490, 505, 515, 500, 530, 520]
+months = list(range(1, 13))
+
+print("資料筆數:", len(fuel))
+print(fuel)
+```
+
+---
+
+### K.1 以 Python 重現本週手算範例
+
+```python
+# ============================================================
+# K.1 手動實作 SES / Holt / Winters（公式與講義1.5–1.6節完全一致）
+# 目的：驗證 Python 計算結果與 Excel、手算結果三方一致
+# ============================================================
+
+def ses_forecast(data, alpha):
+    """單一指數平滑，F1=A1，逐期遞迴計算"""
+    F = [data[0]]
+    for t in range(1, len(data)):
+        F.append(alpha * data[t-1] + (1 - alpha) * F[t-1])
+    return F
+
+def holt_forecast(data, alpha, beta):
+    """Holt雙參數法，L1=A1, T1=A2-A1"""
+    L = [data[0]]
+    T = [data[1] - data[0]]
+    F = [None]  # 第1期無前期資料可預測
+    for t in range(1, len(data)):
+        F.append(L[t-1] + T[t-1])
+        Lt = alpha * data[t] + (1 - alpha) * (L[t-1] + T[t-1])
+        Tt = beta * (Lt - L[t-1]) + (1 - beta) * T[t-1]
+        L.append(Lt)
+        T.append(Tt)
+    return L, T, F
+
+def winters_forecast(data, alpha, beta, gamma, season_len=4):
+    """Winters三參數法（乘法模型），以第一個完整週期估計初始值"""
+    y1 = data[:season_len]
+    y2 = data[season_len:2*season_len]
+    L0 = np.mean(y1)
+    T0 = (np.mean(y2) - np.mean(y1)) / season_len
+    S_init = [x / L0 for x in y1]
+    L, T, S, F = [], [], [None]*len(data), [None]*len(data)
+    Lprev, Tprev = L0, T0
+    for t in range(len(data)):
+        sprev = S_init[t] if t < season_len else S[t-season_len]
+        F[t] = None if t == 0 else (Lprev + Tprev) * sprev
+        Lt = alpha * (data[t] / sprev) + (1 - alpha) * (Lprev + Tprev)
+        Tt = beta * (Lt - Lprev) + (1 - beta) * Tprev
+        St = gamma * (data[t] / Lt) + (1 - gamma) * sprev
+        L.append(Lt); T.append(Tt); S[t] = St
+        Lprev, Tprev = Lt, Tt
+    return L, T, S, F
+
+# --- 驗證 SES（對照1.5節表格）---
+F_ses = ses_forecast(fuel, 0.2)
+print("=== SES (alpha=0.2) ===")
+print("Python計算:", [round(x, 2) for x in F_ses])
+print("講義手算  : 480.00,480.00,483.00,480.40,486.32,489.06,496.25,495.00,497.00,500.60,500.48,506.38")
+
+# --- 驗證 Holt（對照1.6.1節表格）---
+parts = [120, 128, 135, 145, 150, 162, 168, 180, 190, 200]
+L, T, F_holt = holt_forecast(parts, 0.3, 0.2)
+print("\n=== Holt (alpha=0.3, beta=0.2) ===")
+print("Python計算:", [round(x, 2) if x is not None else None for x in F_holt])
+print("講義手算  : None,128.00,136.00,143.64,152.07,159.35,168.20,176.19,185.61,195.47")
+print(f"第11期預測: {L[-1]+T[-1]:.2f}　第12期預測: {L[-1]+2*T[-1]:.2f}")
+
+# --- 驗證 Winters（對照1.6.2節表格）---
+ammo = [200, 350, 180, 420, 220, 380, 190, 450, 240, 400, 205, 480]
+L2, T2, S2, F_winters = winters_forecast(ammo, 0.2, 0.1, 0.3)
+print("\n=== Winters (alpha=0.2, beta=0.1, gamma=0.3) ===")
+print("Python計算:", [round(x, 2) if x is not None else None for x in F_winters])
+print("講義手算  : None,362.03,188.31,442.98,211.22,376.96,196.75,462.46,226.38,401.79,206.94,489.49")
+```
+
+**預期輸出**：三種方法的 Python 計算結果應與講義中的手算表格數字幾乎完全一致（Winters 因累積四捨五入方式略有 0.1–0.3 的極小差異，屬正常現象，1.6.2 節已說明原因）。
+
+---
+
+### K.2 使用業界標準套件 `statsmodels`
+
+```python
+# ============================================================
+# K.2 改用 statsmodels 內建函數（業界標準做法）
+# ============================================================
+from statsmodels.tsa.holtwinters import SimpleExpSmoothing, Holt, ExponentialSmoothing
+
+# --- SES ---
+model_ses = SimpleExpSmoothing(
+    fuel, initialization_method='known', initial_level=fuel[0]
+).fit(smoothing_level=0.2, optimized=False)
+print("=== statsmodels SimpleExpSmoothing (alpha=0.2) ===")
+print([round(x, 2) for x in model_ses.fittedvalues])
+
+# --- Holt ---
+model_holt = Holt(
+    parts, initialization_method='estimated'
+).fit(smoothing_level=0.3, smoothing_trend=0.2, optimized=False)
+print("\n=== statsmodels Holt (alpha=0.3, beta=0.2) ===")
+print([round(x, 2) for x in model_holt.fittedvalues])
+
+# --- Winters ---
+model_hw = ExponentialSmoothing(
+    ammo, trend='add', seasonal='mul', seasonal_periods=4,
+    initialization_method='estimated'
+).fit(smoothing_level=0.2, smoothing_trend=0.1, smoothing_seasonal=0.3, optimized=False)
+print("\n=== statsmodels ExponentialSmoothing/Winters ===")
+print([round(x, 2) for x in model_hw.fittedvalues])
+```
+
+> [!CAUTION]
+> 執行後會發現 `statsmodels` 算出的 Holt／Winters 配適值，跟講義手算結果**不完全相同**（SES 則會相同）。原因出在**初始值的設定方式不同**：本週講義採用最簡單直觀的慣例（$L_1=A_1$、$T_1=A_2-A_1$），這樣才能讓初學者徒手驗算；`statsmodels` 預設的 `initialization_method='estimated'` 則是用線性迴歸從全部歷史資料**回推**一個統計上更穩健的初始值，兩者出發點不同、後續每一期的遞迴計算自然產生落差。**這不是誰對誰錯，而是同一種方法存在不同的實務慣例**——撰寫論文時，務必在方法論章節清楚說明採用哪一種初始化方式，並保持全文一致，才不會讓讀者無法重現您的結果。若想讓 `statsmodels` 的初始值與講義完全對齊，可以改用 `initialization_method='known'` 並手動指定 `initial_level`、`initial_trend`。
+
+---
+
+### K.3 Excel 做不到的延伸：自動搜尋最佳平滑常數
+
+```python
+# ============================================================
+# K.3 網格搜尋 + scipy.optimize 尋找最佳 alpha（取代Excel規劃求解）
+# ============================================================
+from scipy.optimize import minimize_scalar
+
+def sse_ses(data, alpha):
+    """計算給定alpha下的SES誤差平方和（從第2期起，與講義2.1節Excel設定一致）"""
+    F = ses_forecast(data, alpha)
+    return sum((data[t] - F[t])**2 for t in range(1, len(data)))
+
+# --- 方法一：網格搜尋（Grid Search），窮舉 0.01 到 0.99，每次間隔 0.01 ---
+alphas = np.arange(0.01, 1.00, 0.01)
+sse_values = [sse_ses(fuel, a) for a in alphas]
+best_alpha_grid = alphas[np.argmin(sse_values)]
+print(f"網格搜尋最佳 alpha = {best_alpha_grid:.2f}, 最小SSE = {min(sse_values):.2f}")
+
+# --- 方法二：scipy 數值優化，比網格搜尋更精確、更快速 ---
+result = minimize_scalar(lambda a: sse_ses(fuel, a), bounds=(0, 1), method='bounded')
+print(f"scipy優化最佳 alpha = {result.x:.4f}, 最小SSE = {result.fun:.2f}")
+
+# 繪製SSE隨alpha變化的曲線，直觀呈現「最佳解」是曲線的最低點
+plt.figure(figsize=(7, 4))
+plt.plot(alphas, sse_values, color='steelblue')
+plt.axvline(result.x, color='red', linestyle='--', label=f'最佳α={result.x:.3f}')
+plt.xlabel('平滑常數 α')
+plt.ylabel('誤差平方和 SSE')
+plt.title('SES 誤差平方和 vs. 平滑常數 α')
+plt.legend()
+plt.grid(alpha=0.3)
+plt.show()
+```
+
+> [!TIP]
+> 這正是 Python 相對於 Excel 規劃求解的優勢之一：**一次可以掃描成百上千組參數組合，且結果具有完全的可重現性**（Excel 規劃求解的疊代路徑有時會因初始值不同而收斂到不同解，Python 的 `scipy.optimize` 在凸函數情境下則能穩定找到全域最佳解）。若要同時搜尋 Holt 的 $(\alpha,\beta)$ 或 Winters 的 $(\alpha,\beta,\gamma)$，只需要把 `minimize_scalar` 換成多變數版本的 `scipy.optimize.minimize`，概念完全相同。
+
+---
+
+### K.4 視覺化比較圖表
+
+```python
+# ============================================================
+# K.4 以 matplotlib 繪製「實際值 vs. 各方法預測值」比較圖
+# ============================================================
+
+F_ses_02 = ses_forecast(fuel, 0.2)
+F_ses_best = ses_forecast(fuel, result.x)  # 使用K.3找出的最佳alpha
+
+plt.figure(figsize=(9, 5))
+plt.plot(months, fuel, marker='o', linewidth=2.5, color='black', label='實際值')
+plt.plot(months, F_ses_02, marker='s', linestyle='--', label='SES (α=0.2)')
+plt.plot(months, F_ses_best, marker='^', linestyle='--', label=f'SES (α={result.x:.2f}，最佳解)')
+plt.xlabel('月份')
+plt.ylabel('油料消耗量（公秉）')
+plt.title('實際值 vs. 不同 α 之 SES 預測值比較')
+plt.legend()
+plt.grid(alpha=0.3)
+plt.show()
+```
+
+---
+
+### K.5 誤差指標與追蹤訊號自動化計算
+
+```python
+# ============================================================
+# K.5 誤差指標（MAD/MSE/RMSE/MAPE）與追蹤訊號（對照1.7–1.8節）
+# ============================================================
+
+def forecast_metrics(actual, forecast):
+    """計算MAD, MSE, RMSE, MAPE，並回傳逐期誤差供追蹤訊號使用（從第2期起）"""
+    errors = [actual[t] - forecast[t] for t in range(1, len(actual))]
+    abs_errors = [abs(e) for e in errors]
+    sq_errors = [e**2 for e in errors]
+    pct_errors = [abs(e) / actual[t+1] * 100 for t, e in enumerate(errors)]
+    return {
+        'errors': errors,
+        'MAD': np.mean(abs_errors),
+        'MSE': np.mean(sq_errors),
+        'RMSE': np.sqrt(np.mean(sq_errors)),
+        'MAPE': np.mean(pct_errors),
+    }
+
+metrics = forecast_metrics(fuel, F_ses_02)
+print(f"MAD={metrics['MAD']:.2f}  MSE={metrics['MSE']:.2f}  "
+      f"RMSE={metrics['RMSE']:.2f}  MAPE={metrics['MAPE']:.2f}%")
+print("講義手算: MAD=16.84 MSE=388.12 RMSE=19.70 MAPE=3.29%")
+
+# --- 追蹤訊號 ---
+errors = metrics['errors']
+abs_errors = [abs(e) for e in errors]
+cum_err = np.cumsum(errors)
+running_mad = [np.mean(abs_errors[:i+1]) for i in range(len(abs_errors))]
+TS = [cum_err[i] / running_mad[i] for i in range(len(cum_err))]
+
+print("\n追蹤訊號逐期結果:")
+for i, ts in enumerate(TS):
+    flag = " <-- 超出±4警戒" if abs(ts) > 4 else ""
+    print(f"第{i+2}期: TS={ts:.2f}{flag}")
+
+# 繪製追蹤訊號管制圖
+plt.figure(figsize=(8, 4))
+plt.plot(range(2, 13), TS, marker='o', color='darkorange')
+plt.axhline(4, color='red', linestyle='--', label='上界+4')
+plt.axhline(-4, color='red', linestyle='--', label='下界-4')
+plt.axhline(0, color='gray', linestyle=':')
+plt.xlabel('月份')
+plt.ylabel('追蹤訊號 TS')
+plt.title('追蹤訊號預警圖')
+plt.legend()
+plt.grid(alpha=0.3)
+plt.show()
+```
+
+**預期輸出**：誤差指標應與講義 1.7 節手算結果一致（MAD=16.84、RMSE=19.70、MAPE=3.29%）；追蹤訊號應在第 8 期後持續超出 +4 警戒線，與 1.8 節「模型出現系統性低估」的結論一致，圖表上會清楚看到橘色曲線在第 8 期後穿越紅色上界線並持續攀升。
+
+---
+
 ## 參考資料
 
 - [時間序列](https://zh.wikipedia.org/zh-tw/%E6%99%82%E9%96%93%E5%BA%8F%E5%88%97)（維基百科）
