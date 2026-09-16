@@ -1682,6 +1682,8 @@ print("資料筆數:", len(fuel))
 print(fuel)
 ```
 
+<img width="1000" height="56" alt="image" src="https://github.com/user-attachments/assets/c820b05f-35b9-4d87-8c13-fddb3540d5b1" />
+
 ---
 
 ### J.1 以 Python 重現本週手算範例
@@ -1755,6 +1757,8 @@ print("講義手算  : None,362.03,188.31,442.98,211.22,376.96,196.75,462.46,226
 
 **預期輸出**：三種方法的 Python 計算結果應與講義中的手算表格數字幾乎完全一致（Winters 因累積四捨五入方式略有 0.1–0.3 的極小差異，屬正常現象，1.6.2 節已說明原因）。
 
+<img width="995" height="268" alt="image" src="https://github.com/user-attachments/assets/00520a44-e139-4eb5-b012-178e273445cb" />
+
 ---
 
 ### J.2 使用業界標準套件 `statsmodels`
@@ -1787,6 +1791,8 @@ model_hw = ExponentialSmoothing(
 print("\n=== statsmodels ExponentialSmoothing/Winters ===")
 print([round(x, 2) for x in model_hw.fittedvalues])
 ```
+
+<img width="997" height="186" alt="image" src="https://github.com/user-attachments/assets/0eaf8a6c-2b0b-4f41-a554-9e9c6774e54a" />
 
 > [!CAUTION]
 > 執行後會發現 `statsmodels` 算出的 Holt／Winters 配適值，跟講義手算結果**不完全相同**（SES 則會相同）。原因出在**初始值的設定方式不同**：本週講義採用最簡單直觀的慣例（ $L_1=A_1$、 $T_1=A_2-A_1$），這樣才能讓初學者徒手驗算；`statsmodels` 預設的 `initialization_method='estimated'` 則是用線性迴歸從全部歷史資料**回推**一個統計上更穩健的初始值，兩者出發點不同、後續每一期的遞迴計算自然產生落差。**這不是誰對誰錯，而是同一種方法存在不同的實務慣例**——撰寫論文時，務必在方法論章節清楚說明採用哪一種初始化方式，並保持全文一致，才不會讓讀者無法重現您的結果。若想讓 `statsmodels` 的初始值與講義完全對齊，可以改用 `initialization_method='known'` 並手動指定 `initial_level`、`initial_trend`。
@@ -1828,6 +1834,8 @@ plt.grid(alpha=0.3)
 plt.show()
 ```
 
+<img width="626" height="393" alt="image" src="https://github.com/user-attachments/assets/f136ef96-ac54-4b8f-a9ad-2c97170f298d" />
+
 > [!TIP]
 > 這正是 Python 相對於 Excel 規劃求解的優勢之一：**一次可以掃描成百上千組參數組合，且結果具有完全的可重現性**（Excel 規劃求解的疊代路徑有時會因初始值不同而收斂到不同解，Python 的 `scipy.optimize` 在凸函數情境下則能穩定找到全域最佳解）。若要同時搜尋 Holt 的 $(\alpha,\beta)$ 或 Winters 的 $(\alpha,\beta,\gamma)$，只需要把 `minimize_scalar` 換成多變數版本的 `scipy.optimize.minimize`，概念完全相同。
 
@@ -1854,6 +1862,8 @@ plt.legend()
 plt.grid(alpha=0.3)
 plt.show()
 ```
+
+<img width="773" height="470" alt="image" src="https://github.com/user-attachments/assets/3fee1569-51f6-4933-bc7d-3ad31309e577" />
 
 ---
 
@@ -1908,6 +1918,9 @@ plt.legend()
 plt.grid(alpha=0.3)
 plt.show()
 ```
+
+<img width="967" height="321" alt="image" src="https://github.com/user-attachments/assets/42cbf746-1f55-4f69-8e2d-f1de8028555b" />
+<img width="682" height="393" alt="image" src="https://github.com/user-attachments/assets/108ef563-9ecd-470d-be42-850cecd3ee00" />
 
 **預期輸出**：誤差指標應與講義 1.7 節手算結果一致（MAD=16.84、RMSE=19.70、MAPE=3.29%）；追蹤訊號應在第 8 期後持續超出 +4 警戒線，與 1.8 節「模型出現系統性低估」的結論一致，圖表上會清楚看到橘色曲線在第 8 期後穿越紅色上界線並持續攀升。
 
