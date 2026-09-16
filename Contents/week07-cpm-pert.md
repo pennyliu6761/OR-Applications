@@ -195,7 +195,7 @@ $$
 Z = \frac{\text{目標日期} - TE}{\sqrt{\sum_{i\in CP}\sigma_i^2}}
 $$
 
-查標準常態分配表得 $P(\text{完工} \le \text{目標日期}) = \Phi(Z)$。
+查標準常態分配表得 $P(\text{完工} \le \text{目標日期}) = \Phi(Z)$ 。
 
 **完整手算範例**：延續 1.2 節，關鍵路徑（A,B,E,G,H,I）各作業變異數加總：
 
@@ -261,7 +261,7 @@ $$
 | H | 6 | 3,600 | 4 | 5,200 | 2 | 800 |
 | I | 3 | 1,500 | 2 | 2,100 | 1 | 600 |
 
-正常總成本 $=37,000$。目標：將專案工期由 41 天壓縮至 36 天（縮短 5 天）。
+正常總成本 $=37,000$ 。目標：將專案工期由 41 天壓縮至 36 天（縮短 5 天）。
 
 **逐步壓縮過程**（每次僅在關鍵路徑 A-B-E-G-H-I 上，挑選成本斜率最低者）：
 
@@ -306,8 +306,8 @@ $$
 
 | 項目 | 公式 |
 |---|---|
-| 正推法 | $ES_i=\max_{p}EF_p$，$EF_i=ES_i+t_i$ |
-| 反推法 | $LF_i=\min_{s}LS_s$，$LS_i=LF_i-t_i$ |
+| 正推法 | $ES_i=\max_{p}EF_p$ ， $EF_i=ES_i+t_i$ |
+| 反推法 | $LF_i=\min_{s}LS_s$ ， $LS_i=LF_i-t_i$ |
 | 浮時 | $\text{Slack}=LS-ES=LF-EF$ |
 | PERT 期望時間 | $t_e=\dfrac{a+4m+b}{6}$ |
 | PERT 變異數 | $\sigma^2=\left(\dfrac{b-a}{6}\right)^2$ |
@@ -427,7 +427,7 @@ H 欄：`=F2-D2`（浮時）。I 欄：`=IF(H2=0,"關鍵","")`，並用條件式
 
 **PERT 三點估計**（$a,m,b$）：A(3,4,5)、B(4,6,10)、C(2,3,4)、D(3,5,9)、E(5,7,11)、F(3,4,5)、G(1,2,3)。
 
-計算得期望工期 $=21.667$ 天，關鍵路徑不變，關鍵路徑變異數加總 $=4.222$，標準差 $\sigma=1.528$。
+計算得期望工期 $=21.667$ 天，關鍵路徑不變，關鍵路徑變異數加總 $=4.222$ ，標準差 $\sigma=1.528$ 。
 
 | 目標日期 | $Z$ | 完工機率 |
 |---|---|---|
@@ -494,18 +494,193 @@ H 欄：`=F2-D2`（浮時）。I 欄：`=IF(H2=0,"關鍵","")`，並用條件式
 
 ---
 
-## Hour 3（後 20 分鐘）｜總結：國防應用情境與碩士論文方向
+## Hour 3（後 20 分鐘）｜碩士論文延伸應用
 
-**國防應用情境**
+> [!NOTE]
+> 以下兩個方向，示範如何把本週的 CPM／PERT 方法延伸為具備研究貢獻的碩士論文題目——核心邏輯是：**CPM 假設資源無限、只要不違反前置關係就能立即開始作業，但實務上人力與裝備都是有限資源；PERT 的分析解只計算「單一」關鍵路徑的變異，卻可能低估「路徑轉移」帶來的額外風險**。每個方向皆包含主題定義、方法說明、模擬資料設計與完整可執行的 Python 實作。
 
-- 新型武器研發專案時程管制，以 PERT 量化技術不確定性下的如期完工機率。
-- 大規模演訓籌備時限規劃，運用 CPM 找出決定演訓能否如期展開的關鍵作業。
-- 裝備緊急搶修或戰損復原專案之時程壓縮決策，在有限資源下找出最小成本的加速方案。
+### 3.4 論文方向一：資源限制專案排程問題（RCPSP）於演訓籌備任務之應用
 
-**碩士論文方向**
+**主題定義**：CPM 計算出的專案工期，隱含假設只要前置作業完成，後續作業就能立即開始，不受人力或裝備數量限制。但實務上，多項作業可能需要**競爭同一批有限的技師或裝備資源**——即使 CPM 顯示兩項作業可以並行，若當下沒有足夠人力同時執行，其中一項作業仍必須延後。本研究以無人機研發專案為例，加入技師人力上限，運用資源限制專案排程問題（RCPSP）的排程生成法則，驗證資源排擠對專案工期的實際影響幅度。
 
-- 結合資源限制之專案排程問題（RCPSP, Resource-Constrained Project Scheduling Problem）在演訓任務之應用，同時考慮時間網路限制與人力、裝備等資源的排擠效應。
-- 模糊 PERT 或蒙地卡羅模擬導向之專案風險評估方法，處理專家三點估計本身存在的主觀不確定性。
+**方法說明**：
+
+- **序列排程生成法（Serial Schedule Generation Scheme, Serial SGS）**：依優先權法則（本示範採用 CPM 之最早開始時間 ES 排序）依序決定每項作業的實際開始時間，每次都選擇「滿足前置關係、且當時資源用量不超過上限」的最早可行時間點，是 RCPSP 最基礎、也最常用的建構式演算法。
+- **與 CPM 的差異**：CPM 只檢查「前置關係」；RCPSP 的排程生成法則除了前置關係，還必須逐時段檢查「資源使用量加總是否超過可用上限」，若超過，該作業必須延後開始，即使其前置作業早已完成。
+
+**模擬資料**：沿用無人機研發專案 9 項作業，新增每項作業所需技師人數，並設定技師人力池上限為 4 人（原先各作業平均需求 2–3 人，同時段最多可能需要 5–6 人，形成資源瓶頸）。
+
+```python
+# ============================================================
+# 論文方向一：RCPSP資源限制專案排程（序列排程生成法）
+# ============================================================
+import numpy as np
+
+# --- 模擬資料：沿用1.1節無人機研發專案，新增各作業所需技師人數 ---
+activities = {
+    'A': {'t':5,  'pred':[],        'resource':2},
+    'B': {'t':8,  'pred':['A'],     'resource':3},
+    'C': {'t':6,  'pred':['A'],     'resource':2},
+    'D': {'t':10, 'pred':['B'],     'resource':3},
+    'E': {'t':12, 'pred':['B'],     'resource':2},
+    'F': {'t':4,  'pred':['C'],     'resource':2},
+    'G': {'t':7,  'pred':['D','E','F'], 'resource':3},
+    'H': {'t':6,  'pred':['G'],     'resource':2},
+    'I': {'t':3,  'pred':['H'],     'resource':2},
+}
+order = list(activities.keys())
+
+# --- 先計算純CPM（忽略資源限制）的結果作為對照基準 ---
+def cpm(activities, order):
+    ES, EF = {}, {}
+    for a in order:
+        ES[a] = max([EF[p] for p in activities[a]['pred']], default=0)
+        EF[a] = ES[a] + activities[a]['t']
+    return ES, EF, max(EF.values())
+
+ES_cpm, EF_cpm, duration_cpm = cpm(activities, order)
+print(f"純CPM（忽略資源限制）專案工期 = {duration_cpm} 天")
+
+# --- RCPSP：技師人力池上限4人，用序列排程生成法求解 ---
+R_available = 4
+
+def rcpsp_serial_sgs(activities, order, R_available):
+    """序列排程生成法：依CPM之ES值排序，依序為每項作業安排「滿足前置關係
+       且資源用量不超過上限」的最早可行開始時間"""
+    sched_order = sorted(order, key=lambda a: ES_cpm[a])
+    scheduled = {}
+    resource_usage = {}
+
+    def get_usage(t):
+        return resource_usage.get(t, 0)
+
+    for a in sched_order:
+        earliest_start = max([scheduled[p]['finish'] for p in activities[a]['pred']], default=0)
+        start = earliest_start
+        while True:
+            duration, need = activities[a]['t'], activities[a]['resource']
+            feasible = all(get_usage(start+i)+need <= R_available for i in range(duration))
+            if feasible:
+                for i in range(duration):
+                    resource_usage[start+i] = get_usage(start+i) + need
+                scheduled[a] = {'start': start, 'finish': start+duration}
+                break
+            start += 1
+    return scheduled
+
+scheduled = rcpsp_serial_sgs(activities, order, R_available)
+print(f"\n=== RCPSP排程結果（技師人力上限={R_available}人）===")
+for a in order:
+    print(f"  {a}: 開始={scheduled[a]['start']}, 結束={scheduled[a]['finish']}"
+          f"（CPM原始ES={ES_cpm[a]}, 延誤={scheduled[a]['start']-ES_cpm[a]}天）")
+
+duration_rcpsp = max(s['finish'] for s in scheduled.values())
+print(f"\nRCPSP專案工期 = {duration_rcpsp} 天")
+print(f"純CPM工期 = {duration_cpm} 天")
+print(f"因資源限制導致工期延長 = {duration_rcpsp-duration_cpm} 天 "
+      f"({(duration_rcpsp/duration_cpm-1)*100:.1f}%)")
+```
+
+**預期輸出**：純 CPM 計算工期為 41 天，但在技師人力僅 4 人的限制下，RCPSP 排程結果顯示專案工期延長至 61 天，**足足延長了 20 天（48.8%）**！延誤主要發生在 D、E 兩項作業原本應該並行（CPM 顯示兩者皆從第 13 天開始），但兩者合計需要 5 位技師（超過 4 人上限），必須有一項作業延後開始，且此延誤會沿著前置關係一路傳遞影響後續所有作業。
+
+> [!IMPORTANT]
+> 這個結果對演訓籌備規劃有重要意涵：**許多專案時程延誤的真正原因，並非任務本身的複雜度或不確定性（PERT 處理的問題），而是單純的人力或裝備調度排擠（RCPSP 處理的問題）**。若指揮官只用 CPM 規劃時程、卻未同時檢視人力調度可行性，實際執行時很可能發現「紙上談兵的 41 天」與「人力受限後的 61 天」之間存在巨大落差，這正是 RCPSP 分析在實務專案管理中不可或缺的原因。
+
+**論文延伸建議**：可進一步比較不同優先權法則（如依作業時間最短優先、依資源需求最少優先）在 RCPSP 排程生成法中的表現差異；也可以用 PuLP 建立 RCPSP 的精確整數規劃模型（決策變數為各作業的實際開始時間），求解真正的最小工期，與序列排程生成法之啟發式解比較品質落差，這正好呼應第 2 週「啟發式解 vs. 精確解」的核心主題。
+
+---
+
+### 3.5 論文方向二：蒙地卡羅模擬導向之專案風險評估——路徑轉移風險的量化驗證
+
+**主題定義**：如 1.3 節提醒，PERT 分析解的完工機率計算，**只考慮了單一（原始）關鍵路徑的變異數**，隱含假設「非關鍵路徑不會反超變成新的關鍵路徑」。本研究以蒙地卡羅模擬法，針對全部 9 項作業同時抽樣三點估計的隨機時間、重新計算每一次模擬的關鍵路徑，實際驗證路徑轉移發生的頻率，並比較分析解與模擬解在完工機率估計上的落差幅度。
+
+**方法說明**：
+
+- **Beta-PERT 分配抽樣**：三點估計 $(a,m,b)$ 可轉換為 Beta 分配的參數 $\alpha=1+4\dfrac{m-a}{b-a}$ 、 $\beta=1+4\dfrac{b-m}{b-a}$ ，從此 Beta 分配中抽樣即可產生符合三點估計特性的隨機作業時間。
+- **重新計算關鍵路徑**：與分析解不同，每一次模擬都用當次抽樣到的隨機時間**重新執行完整的正推／反推計算**，找出當次的關鍵路徑——由於各作業時間隨機獨立變動，不同次模擬找到的關鍵路徑可能不同，這正是「路徑轉移」現象的直接體現。
+- **實證比較**：統計數千次模擬中，各種路徑組合成為關鍵路徑的頻率分布，並比較模擬法與分析解在各目標日期完工機率上的差異。
+
+**模擬資料**：沿用 1.2 節無人機研發專案之三點估計資料，執行 10,000 次蒙地卡羅模擬。
+
+```python
+# ============================================================
+# 論文方向二：蒙地卡羅模擬驗證PERT路徑轉移風險
+# ============================================================
+import numpy as np
+from scipy.stats import norm
+
+np.random.seed(42)
+
+pert_data = {
+    'A': (3,5,7), 'B': (6,8,12), 'C': (4,6,8), 'D': (7,10,15),
+    'E': (9,12,17), 'F': (2,4,6), 'G': (5,7,11), 'H': (4,6,8), 'I': (2,3,4),
+}
+pred = {'A':[], 'B':['A'], 'C':['A'], 'D':['B'], 'E':['B'], 'F':['C'],
+        'G':['D','E','F'], 'H':['G'], 'I':['H']}
+order = ['A','B','C','D','E','F','G','H','I']
+succ = {a: [] for a in pred}
+for a, ps in pred.items():
+    for p in ps:
+        succ[p].append(a)
+
+def sample_beta_pert(a, m, b):
+    """以Beta-PERT分配抽樣隨機作業時間，符合三點估計的機率特性"""
+    if b == a:
+        return a
+    alpha = 1 + 4*(m-a)/(b-a)
+    beta_param = 1 + 4*(b-m)/(b-a)
+    return a + np.random.beta(alpha, beta_param) * (b-a)
+
+def cpm_duration(times, order, pred, succ):
+    """給定一組隨機作業時間，重新計算專案工期與當次的關鍵路徑"""
+    ES, EF = {}, {}
+    for a in order:
+        ES[a] = max([EF[p] for p in pred[a]], default=0)
+        EF[a] = ES[a] + times[a]
+    duration = max(EF.values())
+    LS, LF = {}, {}
+    for a in reversed(order):
+        LF[a] = min([LS[s] for s in succ[a]], default=duration)
+        LS[a] = LF[a] - times[a]
+    critical = tuple(sorted(a for a in order if abs(LS[a]-ES[a]) < 1e-9))
+    return duration, critical
+
+# --- 分析解：僅計算原始關鍵路徑A-B-E-G-H-I的變異數（對照1.3節）---
+critical_path_theory = ['A','B','E','G','H','I']
+var_theory = sum(((pert_data[a][2]-pert_data[a][0])/6)**2 for a in critical_path_theory)
+sigma_theory = np.sqrt(var_theory)
+mean_theory = sum((pert_data[a][0]+4*pert_data[a][1]+pert_data[a][2])/6 for a in critical_path_theory)
+print(f"分析解: 期望工期={mean_theory:.3f}, sigma={sigma_theory:.4f}")
+
+# --- 蒙地卡羅模擬：每次重新抽樣全部作業時間，重新計算關鍵路徑 ---
+n_sim = 10000
+durations = []
+critical_path_counter = {}
+for _ in range(n_sim):
+    times = {a: sample_beta_pert(*pert_data[a]) for a in order}
+    dur, crit = cpm_duration(times, order, pred, succ)
+    durations.append(dur)
+    critical_path_counter[crit] = critical_path_counter.get(crit, 0) + 1
+
+durations = np.array(durations)
+print(f"蒙地卡羅模擬(n={n_sim}): 平均工期={durations.mean():.3f}, 標準差={durations.std():.4f}")
+
+print(f"\n=== 各關鍵路徑組合出現頻率（驗證路徑轉移現象）===")
+for path, count in sorted(critical_path_counter.items(), key=lambda x: -x[1])[:5]:
+    print(f"  路徑{path}: {count}次 ({count/n_sim*100:.2f}%)")
+
+print(f"\n=== 完工機率比較：分析解 vs. 蒙地卡羅模擬 ===")
+for target in [40, 42, 44, 46]:
+    z = (target - mean_theory) / sigma_theory
+    prob_theory = norm.cdf(z)
+    prob_sim = (durations <= target).mean()
+    print(f"目標{target}天: 分析解={prob_theory*100:.2f}%, 模擬解={prob_sim*100:.2f}%, "
+          f"差距={abs(prob_theory-prob_sim)*100:.2f}%")
+```
+
+**預期輸出**：模擬結果顯示，原始關鍵路徑 A-B-E-G-H-I 大約在 82% 的模擬中維持關鍵路徑地位，但**有約 18% 的模擬中，路徑 A-B-D-G-H-I（改經 D 而非 E）反而成為新的關鍵路徑**——這正是 1.3 節理論提醒的「路徑轉移」現象首次被具體量化驗證。比較完工機率，分析解與模擬解在多數目標日期上有 2–5 個百分點的落差，且**分析解通常會低估真正的專案風險**（因為忽略了路徑轉移帶來的額外變異來源）。
+
+**論文延伸建議**：可進一步分析哪些作業的三點估計不確定性（$b-a$ 的大小）對「路徑轉移機率」的影響最大，找出應該優先投入資源縮小估計不確定性的關鍵作業；也可以將此模擬框架與時程壓縮（1.4 節）結合，評估「先壓縮哪一項作業」不僅要考慮成本斜率，還要考慮該作業是否會提高其他路徑反超的風險。
 
 ---
 
@@ -555,7 +730,7 @@ H 欄：`=F2-D2`（浮時）。I 欄：`=IF(H2=0,"關鍵","")`，並用條件式
 
 > [!NOTE]
 > **Q1：浮時為什麼有兩種計算方式（LS-ES 與 LF-EF），兩者答案會不同嗎？**
-> A：不會不同，兩者數學上恆等：因為 $EF=ES+t$、$LF=LS+t$，所以 $LF-EF=(LS+t)-(ES+t)=LS-ES$。提供兩種算法只是方便交叉檢查計算是否正確——若兩種方式算出的浮時不一致，代表 ES/EF/LS/LF 某處計算有誤。
+> A：不會不同，兩者數學上恆等：因為 $EF=ES+t$ 、 $LF=LS+t$ ，所以 $LF-EF=(LS+t)-(ES+t)=LS-ES$ 。提供兩種算法只是方便交叉檢查計算是否正確——若兩種方式算出的浮時不一致，代表 ES/EF/LS/LF 某處計算有誤。
 
 > [!NOTE]
 > **Q2：為什麼 PERT 只計算關鍵路徑的變異數，不考慮非關鍵路徑？**
@@ -597,29 +772,7 @@ H 欄：`=F2-D2`（浮時）。I 欄：`=IF(H2=0,"關鍵","")`，並用條件式
 
 ---
 
-## 附錄F：碩士論文寫作句型範例（方法論／文獻回顧段落）
-
-> [!TIP]
-> 以下提供幾個常見學術寫作句型範例（以本週專案管理主題為例），供學員撰寫論文計畫書或期中報告時參考套用。
-
-**文獻回顧段落句型範例**：
-
-- 「CPM 與 PERT 自 1950 年代發展以來，已成為專案時程管理之基礎工具，惟傳統方法多假設資源無限制、且僅考慮關鍵路徑之時程風險，難以完整反映實務專案中資源排擠與路徑並列之複雜性，此為資源限制專案排程問題（RCPSP）發展之主要背景。」
-- 「近年研究進一步將模糊集合理論導入三點估計法，以模糊數取代精確數值描述專家對作業時間的主觀判斷，發展模糊 PERT 方法，較傳統 PERT 更能反映估計本身的不確定性。」
-
-**研究方法段落句型範例**：
-
-- 「本研究依 [某專案] 之工作分解結構（WBS）建立作業前置關係網路，以正推法與反推法計算各作業之最早／最晚時間與浮時，識別決定專案工期之關鍵路徑。」
-- 「針對關鍵路徑上之作業，本研究進一步蒐集三點時間估計，計算專案期望工期與變異數，並以常態分配近似求解專案於各目標日期前完工之機率。」
-
-**結果與討論段落句型範例**：
-
-- 「如表 [X] 所示，本專案關鍵路徑為 [X]，期望工期為 [X] 天，於 90% 信心水準下建議對外承諾工期為 [X] 天，較單純採用 CPM 確定性估計之工期多預留 [X] 天風險緩衝。」
-- 「時程壓縮分析顯示，將專案工期壓縮 [X] 天，最小成本方案需額外投入 [X] 元，主要壓縮對象為成本斜率最低之 [某作業]，惟壓縮至第 [X] 步後出現路徑並列現象，後續壓縮須同時考慮兩條關鍵路徑。」
-
----
-
-## 附錄G：本週與後續課程週次的關聯
+## 附錄F：本週與後續課程週次的關聯
 
 | 後續週次 | 關聯方式 |
 |---|---|
@@ -627,13 +780,120 @@ H 欄：`=F2-D2`（浮時）。I 欄：`=IF(H2=0,"關鍵","")`，並用條件式
 | 第 6 週：排程與指派問題 | 本週浮時概念與第 6 週延遲時間概念，皆衡量「時間餘裕」但應用情境不同，可對照學習 |
 | 第 15 週：論文整併實戰（一） | 本週專案時程分析架構，可與 AI 故障預測結合，發展為「預測性專案風險評估」之整合研究方向 |
 
-## 附錄H：本週模擬資料集彙整（方便複製使用）
+## 附錄G：本週模擬資料集彙整（方便複製使用）
 
 | 資料集 | 用途 | 摘要 |
 |---|---|---|
 | 無人機研發專案（9項作業） | CPM/PERT/時程壓縮主範例 | 關鍵路徑A-B-E-G-H-I，工期41(CPM)/42(PERT)天 |
 | 演訓籌備專案（7項作業） | 延伸練習一 | 關鍵路徑A-B-D-F-G，工期21(CPM)/21.667(PERT)天 |
 | 小型專案（5項作業） | 延伸練習二 | 壓縮3天後總成本15,400，出現路徑並列 |
+
+---
+
+## 附錄H：Python 實作與解析
+
+> [!NOTE]
+> 本附錄使用 Python 重現本週 Excel 示範的核心邏輯（CPM 網路計算、時程壓縮），並展示 `networkx` 如何自動計算最長路徑（即關鍵路徑），以及 `PuLP` 如何將時程壓縮問題建模為線性規劃直接求解最佳方案，取代 Excel 需要的逐步人工試誤。建議於 [Google Colab](https://colab.research.google.com/) 開啟新筆記本，依序貼上執行。
+
+### H.0 環境設置與 CPM 網路重現（networkx）
+
+```python
+# ============================================================
+# 第7週 附錄H：Python 實作環境設置與 CPM 網路重現（對照1.1節）
+# ============================================================
+!pip install pulp networkx --quiet
+
+import networkx as nx
+
+activities = {'A':5,'B':8,'C':6,'D':10,'E':12,'F':4,'G':7,'H':6,'I':3}
+pred = {'A':[],'B':['A'],'C':['A'],'D':['B'],'E':['B'],'F':['C'],
+        'G':['D','E','F'],'H':['G'],'I':['H']}
+
+# 建立有向圖，邊的權重設為起點作業的時間
+G = nx.DiGraph()
+for a, t in activities.items():
+    G.add_node(a, duration=t)
+for a, preds in pred.items():
+    for p in preds:
+        G.add_edge(p, a, weight=activities[p])
+
+# 加入虛擬終點，連接所有沒有後續作業的節點，方便計算整體最長路徑
+sinks = [n for n in G.nodes() if G.out_degree(n) == 0]
+G.add_node('END')
+for s in sinks:
+    G.add_edge(s, 'END', weight=activities[s])
+
+# 關鍵路徑，本質上就是「圖論中的最長路徑」問題，networkx內建函數一行求解
+longest_path = nx.dag_longest_path(G, weight='weight')
+longest_path_length = nx.dag_longest_path_length(G, weight='weight')
+
+print(f"關鍵路徑（networkx計算）: {longest_path[:-1]}")  # 排除虛擬終點
+print(f"專案總工期: {longest_path_length}")
+print("講義手算: A-B-E-G-H-I, 工期=41")
+```
+
+> [!TIP]
+> CPM 找關鍵路徑的本質，其實就是圖論中的「最長路徑問題（Longest Path Problem）」——在一般圖中最長路徑是 NP-難題，但在**有向無環圖（DAG）**中，因為節點可以被拓撲排序，最長路徑問題可以在線性時間內求解，這正是 `nx.dag_longest_path` 之所以能快速求解的數學原因，也呼應了本週理論多次強調「前置關係圖是有向無環圖」的重要性。
+
+---
+
+### H.1 時程壓縮：PuLP 線性規劃直接求解最佳方案
+
+```python
+# ============================================================
+# H.1 時程壓縮 PuLP線性規劃求解（對照1.4節，取代人工逐步試誤）
+# ============================================================
+import pulp
+
+crash_data = {
+    'A': (5,3000,3,4200), 'B': (8,5000,5,7400), 'C': (6,2400,4,3200),
+    'D': (10,6000,7,8400), 'E': (12,9000,8,13800), 'F': (4,1600,3,2100),
+    'G': (7,4900,5,6900), 'H': (6,3600,4,5200), 'I': (3,1500,2,2100),
+}  # 格式: (正常工時, 正常成本, 趕工工時, 趕工成本)
+target_duration = 36
+
+prob = pulp.LpProblem("Crashing", pulp.LpMinimize)
+
+# 決策變數：各作業的實際工時（在正常與趕工工時之間可調整）、各作業的完工時間
+duration_var = {a: pulp.LpVariable(f"dur_{a}", lowBound=crash_data[a][2], upBound=crash_data[a][0])
+                 for a in activities}
+finish_var = {a: pulp.LpVariable(f"fin_{a}", lowBound=0) for a in activities}
+
+# 目標式：最小化總趕工成本（以成本斜率 × 壓縮天數計算）
+slopes = {a: (crash_data[a][3]-crash_data[a][1])/(crash_data[a][0]-crash_data[a][2]) for a in activities}
+prob += pulp.lpSum(slopes[a] * (crash_data[a][0]-duration_var[a]) for a in activities)
+
+# 限制式：每項作業的完工時間，須晚於其前置作業完工時間加上自身工時
+for a in activities:
+    if pred[a]:
+        for p in pred[a]:
+            prob += finish_var[a] >= finish_var[p] + duration_var[a]
+    else:
+        prob += finish_var[a] >= duration_var[a]
+
+# 限制式：專案總工期（所有作業完工時間之最大值）須小於等於目標工期
+project_end = pulp.LpVariable("project_end", lowBound=0)
+for a in activities:
+    prob += project_end >= finish_var[a]
+prob += project_end <= target_duration
+
+prob.solve(pulp.PULP_CBC_CMD(msg=0))
+
+total_crash_cost = pulp.value(prob.objective)
+normal_cost = sum(c[1] for c in crash_data.values())
+print(f"PuLP線性規劃求解結果:")
+print(f"總趕工成本增量 = {total_crash_cost:.2f}")
+print(f"總成本 = {normal_cost + total_crash_cost:.2f}")
+print("講義手算: 總成本=40400（增量3400）")
+
+print("\n各作業求解工時:")
+for a in activities:
+    crashed_days = crash_data[a][0] - duration_var[a].varValue
+    print(f"  {a}: 工時={duration_var[a].varValue:.1f}"
+          f"（正常={crash_data[a][0]}, 趕工={crash_data[a][2]}, 本次壓縮={crashed_days:.1f}天）")
+```
+
+**預期輸出**：與講義 1.4 節手算結果完全一致（總成本 40,400 元，增量 3,400 元），且 PuLP 會**一次性**求解出最佳壓縮組合，不需要像人工試誤那樣一步一步檢查關鍵路徑是否改變、是否出現路徑並列——這正是線性規劃相對於人工逐步試誤最大的效率優勢，尤其當專案規模擴大、可能同時存在多條並列關鍵路徑時，人工試誤極容易出錯或遺漏，PuLP 建模求解則能保證找到全域最佳解。
 
 ---
 
