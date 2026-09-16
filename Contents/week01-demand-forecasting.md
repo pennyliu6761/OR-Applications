@@ -453,8 +453,9 @@ $$
 \text{TS}_t = \frac{\text{累積誤差（Running Sum of Forecast Errors, RSFE}_t)}{\text{MAD}_t}
 $$
 
+$\text{RSFE}_t = \sum_{i=2}^{t}e_i$
 
-其中累積誤差： $\text{RSFE}_t = \sum_{i=2}^{t}e_i$ （誤差**不取絕對值**，正負會互相抵銷）， $\text{MAD}_t$ 為截至第 $t$ 期為止的累積平均絕對誤差。
+（誤差**不取絕對值**，正負會互相抵銷）， $\text{MAD}_t$ 為截至第 $t$ 期為止的累積平均絕對誤差。
 
 **判讀邏輯**：
 
