@@ -1431,8 +1431,27 @@ print(f"{'Holt法':<12}{holt_rmse:>10.2f}{holt_mape:>9.2f}%")
 print(f"{'隨機森林':<12}{rf_rmse:>10.2f}{rf_mape:>9.2f}%")
 ```
 
+```python
+import matplotlib.pyplot as plt
+
+# 繪製預測結果
+plt.figure(figsize=(15, 7))
+plt.plot(np.arange(train_size), train, label='Training Set Actual Demand', color='blue')
+plt.plot(np.arange(train_size, n), test, label='Test Set Actual Demand', color='green', linestyle='--')
+plt.plot(np.arange(train_size, n), holt_preds, label='Holt Method Forecast', color='red', linestyle='-.')
+plt.plot(np.arange(train_size, n), rf_preds, label='Random Forest Forecast', color='purple', linestyle=':')
+
+plt.title('Comparison of Out-of-Sample Prediction: Traditional Smoothing vs. Machine Learning')
+plt.xlabel('Time (Months)')
+plt.ylabel('Demand')
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
 **預期輸出**：在這組相對單純（平穩線性趨勢＋隨機雜訊）的序列上，**Holt 法的 RMSE 與 MAPE 通常明顯優於隨機森林**（約 20 vs. 約 60）。這個結果**並非隨機森林方法本身有缺陷**，而是反映了一個重要的方法論教訓：隨機森林等樹狀模型的預測值僅能落在訓練資料出現過的數值範圍內（樹狀模型的預測本質是「歷史資料的分段平均」，難以外推超出訓練範圍的趨勢），當序列存在持續上升的趨勢時，這個特性會讓樹狀模型系統性低估未來值；而 Holt 法明確將「趨勢」建模為一個可以線性外推的參數，天生更適合處理這類資料。
 
+<img width="1005" height="202" alt="image" src="https://github.com/user-attachments/assets/f06a8520-3b6e-49ce-86f9-b9b261447459" />
 <img width="1238" height="624" alt="image" src="https://github.com/user-attachments/assets/50ca75d7-75f7-46ec-9d9e-d09d89d0a271" />
 
 **論文延伸建議**：可進一步在**不同資料特性**（如加入更明顯的非線性轉折、更多雜訊、或更長的訓練期）下重複此比較實驗，探討機器學習方法在什麼條件下才能展現優勢（如序列存在複雜的非線性交互作用、或有大量外部解釋變數可用時）；也可以將隨機森林替換為梯度提升樹（Gradient Boosting）或第 14 週即將學到的 LSTM，建立更完整的「傳統統計法 vs. 機器學習法 vs. 深度學習法」三方比較框架，這正是「結合長期與短期預測方法之比較研究」最完整的實現方式。
@@ -1517,7 +1536,28 @@ print(f"靜態SES(不校準) MAPE = {mape_static_post:.2f}%")
 print(f"改善幅度 = {(1 - mape_adaptive_post/mape_static_post)*100:.2f}%")
 ```
 
+```python
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(15, 7))
+plt.plot(data, label='Actual Demand', color='blue', marker='o', markersize=4)
+plt.plot(F_adaptive, label='Adaptive Forecast', color='red', linestyle='--')
+plt.plot(F_static, label='Static SES Forecast', color='green', linestyle=':')
+
+plt.axvline(x=12, color='gray', linestyle='-.', label='Structural Break Point (Month 13)')
+
+plt.title('Comparison of Adaptive vs. Static Forecasting (Structural Break)')
+plt.xlabel('Time (Months)')
+plt.ylabel('Demand')
+plt.legend()
+plt.grid(True)
+plt.show()
+```
+
 **預期輸出**：動態框架應能在第 13 期（真實斷點發生的當期）立即偵測到追蹤訊號超標並完成重新校準，斷點後的 MAPE 應較靜態 SES 大幅改善（約 35–40%）。**同時執行結果通常也會在第 6 期附近出現一次「假警報」**（此時序列僅是隨機雜訊、並無真實斷點，卻恰好使追蹤訊號短暫超標）——這個誤觸發現象本身就是重要的研究發現：**追蹤訊號機制存在偽陽性風險，門檻設定過於敏感會導致模型頻繁誤判、過度調整**，這正是 1.8 節「過度調整（Overadjustment）」風險在動態框架中的具體展現，也是本方向後續研究應該處理的核心議題。
+
+<img width="983" height="275" alt="image" src="https://github.com/user-attachments/assets/47904b16-db2f-4450-b4e1-ba50307e82c2" />
+<img width="1238" height="624" alt="image" src="https://github.com/user-attachments/assets/03458b23-0de7-4730-b990-25a665c60224" />
 
 **論文延伸建議**：可進一步研究「如何降低誤觸發率」，例如要求追蹤訊號**連續兩期以上**超標才觸發校準（而非單期超標立即反應），比較不同觸發規則在「偵測真實斷點的靈敏度」與「避免誤觸發的穩健度」之間的權衡（這是訊號偵測理論中經典的靈敏度—特異度取捨，Sensitivity-Specificity Trade-off）；也可以將此框架與第 15 週「預測性維護」的故障預警邏輯整合，探討「需求斷點偵測」與「裝備故障預警」是否能共用同一套異常偵測基礎架構。
 
