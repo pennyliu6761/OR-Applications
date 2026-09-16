@@ -691,6 +691,9 @@ $$\text{RSFE}_t = \sum_{i=2}^{t}e_i$$
 
 求解完成後，因為這組資料的趨勢相當穩定（每期成長幅度接近），最佳 $\beta$ 通常會偏低（模型不需要頻繁修正趨勢估計）；而 $\alpha$ 則視資料雜訊大小而定。實際數值請以您 Excel 求解出來的結果為準。
 
+<img width="1232" height="656" alt="image" src="https://github.com/user-attachments/assets/e0672f59-50dc-40b6-9b07-26bab34e23db" />
+<img width="1247" height="650" alt="image" src="https://github.com/user-attachments/assets/3cc133fc-89d4-4bac-af6d-2b5ac32cdcba" />
+
 > [!WARNING]
 > **常見錯誤**：把 C、D 欄的相對參照與絕對參照搞混，導致複製公式後， $H$2、 $H$4 變成 $H$3、 $H$5……。務必在輸入公式時，對 H2、H4 按 **F4** 鍵切換成絕對參照（顯示為 `$H$2`），再進行複製貼上。
 
@@ -762,6 +765,9 @@ $$\text{RSFE}_t = \sum_{i=2}^{t}e_i$$
 
 求解完成後，比較這三個平滑常數的相對大小：如果 $\gamma$（季節）明顯高於 $\alpha$、$\beta$，代表這組資料的季節性波動非常規律、模型應該重度依賴季節指數來修正預測；反之若 $\gamma$ 偏低，代表季節性不明顯或雜訊較大。
 
+<img width="1340" height="453" alt="image" src="https://github.com/user-attachments/assets/9b92b07a-0c5f-4842-b6e3-23f11e8cb820" />
+<img width="1299" height="388" alt="image" src="https://github.com/user-attachments/assets/dc0d14b9-c18d-4462-b035-9249b7a30a26" />
+
 ---
 
 ### 2.4 示範四：建立追蹤訊號預警表（條件式格式設定）
@@ -789,6 +795,8 @@ $$\text{RSFE}_t = \sum_{i=2}^{t}e_i$$
 
 完成後，任何一期的 TS 絕對值超過 4，該儲存格會自動變色，管理者一眼就能看出「這個月的預測模型已經失準，需要調整」。
 
+<img width="691" height="283" alt="image" src="https://github.com/user-attachments/assets/6f477b85-237c-465d-a2ab-931036ec3fc4" />
+
 > [!TIP]
 > 若想同時標示「輕微偏誤（TS 介於 ±2 至 ±4，尚可接受但需留意）」與「嚴重偏誤（超過 ±4，必須調整）」兩種等級，可以重複「新增規則」的步驟，用不同顏色分別對應 `=ABS(J3)>2` 與 `=ABS(J3)>4` 兩條規則（注意規則的套用順序會影響最終顯示的顏色，較嚴格的規則建議排在後面／優先層級較高的位置）。
 
@@ -808,6 +816,8 @@ $$\text{RSFE}_t = \sum_{i=2}^{t}e_i$$
 2. 點選功能區「插入」（Insert）索引標籤。
 3. 在「圖表」（Charts）群組中，點選「插入折線圖或區域圖」（Insert Line or Area Chart）圖示，選擇「含有資料標記的折線圖」（Line with Markers）。
 4. Excel 會自動產生一張折線圖，X 軸為月份，Y 軸為數值，實際值、SES 預測值（以及 MA3，若有加入）會分別以不同顏色的線條呈現。
+
+<img width="752" height="452" alt="image" src="https://github.com/user-attachments/assets/1f0788f1-dc8f-4c4d-a0b1-0b4c661ec9a5" />
 
 **Step 3：美化與強化判讀**
 
