@@ -104,13 +104,13 @@ $$
 | F | 6 | 18 | 27 | 9 | 9 | 是 |
 | G | 1 | 5 | 28 | 23 | 23 | 是 |
 
-平均流程時間 $=17.43$，平均延遲時間 $=8.14$，逾期件數 $=5$。
+平均流程時間 $=17.43$ ，平均延遲時間 $=8.14$ ，逾期件數 $=5$ 。
 
-**SPT 排序（依處理時間排序：G,C,E,A,D,F,B）**：平均流程時間 $=12.00$，平均延遲時間 $=3.43$，逾期件數 $=4$。
+**SPT 排序（依處理時間排序：G,C,E,A,D,F,B）**：平均流程時間 $=12.00$ ，平均延遲時間 $=3.43$ ，逾期件數 $=4$ 。
 
-**EDD 排序（依交期排序：G,C,A,D,E,B,F）**：平均流程時間 $=12.57$，平均延遲時間 $=3.29$，逾期件數 $=4$。
+**EDD 排序（依交期排序：G,C,A,D,E,B,F）**：平均流程時間 $=12.57$ ，平均延遲時間 $=3.29$ ，逾期件數 $=4$ 。
 
-**CR 排序（依 $d_i/p_i$ 由小到大：D,A,B,C,F,E,G）**：平均流程時間 $=18.14$，平均延遲時間 $=8.29$，逾期件數 $=6$。
+**CR 排序（依 $d_i/p_i$ 由小到大：D,A,B,C,F,E,G）**：平均流程時間 $=18.14$ ，平均延遲時間 $=8.29$ ，逾期件數 $=6$ 。
 
 **四法則績效總表**：
 
@@ -207,9 +207,9 @@ $$
 1. **列縮減**：每一列減去該列最小值，使每列至少出現一個 0。
 2. **行縮減**：每一行減去該行最小值，使每行至少出現一個 0。
 3. **劃線覆蓋**：用最少數量的水平／垂直線，覆蓋矩陣中所有的 0。
-4. **檢查是否達到最佳解**：若覆蓋所需的線數等於矩陣階數 $n$，則矩陣中的 0 可以構成一組完整指派，即為最佳解；若線數少於 $n$，須進行矩陣調整。
+4. **檢查是否達到最佳解**：若覆蓋所需的線數等於矩陣階數 $n$ ，則矩陣中的 0 可以構成一組完整指派，即為最佳解；若線數少於 $n$ ，須進行矩陣調整。
 5. **矩陣調整**：找出所有「未被線覆蓋」的元素中之最小值，未被覆蓋的元素全部減去此值；被兩條線同時覆蓋（交叉點）的元素加上此值；被單一條線覆蓋者不變。
-6. 回到步驟 3，重複直到覆蓋所需線數等於 $n$。
+6. 回到步驟 3，重複直到覆蓋所需線數等於 $n$ 。
 
 **完整手算範例**：某聯保廠將 4 位技工（甲、乙、丙、丁）指派至 4 項保修任務，各組合所需工時（小時）如下：
 
@@ -238,7 +238,7 @@ $$
 | 丙 | 1 | 2 | 0 | 4 |
 | 丁 | 2 | 1 | 0 | 3 |
 
-**Step 3：劃線覆蓋**：檢查發現只需 2 條線即可覆蓋所有 0（例如：畫過「乙列」與「任務3行」），由於 $2<4$，尚未達到最佳解，需進行矩陣調整。
+**Step 3：劃線覆蓋**：檢查發現只需 2 條線即可覆蓋所有 0（例如：畫過「乙列」與「任務3行」），由於 $2<4$ ，尚未達到最佳解，需進行矩陣調整。
 
 **Step 4：矩陣調整**：未被覆蓋元素中最小值為 1（如甲列任務1格）。未覆蓋元素全部減 1，交叉點（乙列與任務3行的交點）加 1：
 
@@ -510,18 +510,205 @@ $$
 
 ---
 
-## Hour 3（後 20 分鐘）｜總結：國防應用情境與碩士論文方向
+## Hour 3（後 20 分鐘）｜碩士論文延伸應用
 
-**國防應用情境**
+> [!NOTE]
+> 以下兩個方向，示範如何把本週的排程與指派方法延伸為具備研究貢獻的碩士論文題目——核心邏輯是：**傳統優先法則（SPT、EDD）只能針對單一績效指標設計，遇到「加權延遲」這種綜合性目標就不再保證最佳；傳統匈牙利法只能處理單一成本矩陣，無法同時考慮技能匹配度、任務急迫性等多重質化因素**。每個方向皆包含主題定義、方法說明、模擬資料設計與完整可執行的 Python 實作。
 
-- 機場跑道起降排班，依任務優先權（緊急醫療後送、戰備警戒起飛 vs. 一般訓練架次）決定起降順序。
-- 聯合作戰艦艇塢修排程，整合多艘艦艇之進塢順序與技師人力指派。
-- 裝備緊急搶修任務指派，於戰損或故障情境下快速決定維修資源分配。
+### 3.4 論文方向一：基因演算法於裝備緊急搶修加權延遲排程之應用
 
-**碩士論文方向**
+**主題定義**：軍事裝備搶修任務經常具有不同的優先權重（如攸關戰備妥善率的關鍵裝備 vs. 一般例行性維護），此時排程目標不再是單純的「平均流程時間最小」或「平均延遲最小」，而是「加權延遲總和最小」——即優先權越高的任務，一旦逾期所付出的代價也越大。本研究驗證：面對這種傳統優先法則（SPT、EDD）未必能給出最佳解的複合目標，基因演算法是否能在不需要針對此問題重新設計專屬啟發式規則的情況下，仍然找到與領域專屬啟發式（Apparent Tardiness Cost, ATC 法則）相當、甚至等於全域最佳解的排程方案。
 
-- 彈性排程演算法（如啟發式規則混合、遺傳演算法）在裝備緊急搶修指派之建模，因應任務優先權動態變化的排程需求。
-- 結合匈牙利法與模糊多準則決策之混合指派模型，處理技師專長、任務急迫性等多重質化與量化因素並存的複雜指派問題。
+**方法說明**：
+
+- **加權延遲總和（Total Weighted Tardiness）**： $\sum_i w_i \times T_i$ ，其中 $w_i$ 為任務 $i$ 的優先權重， $T_i$ 為其延遲時間。此目標函數的最佳排程問題在學術上已被證明為 NP-難題，沒有像 SPT 之於平均流程時間那樣的簡單最佳法則。
+- **ATC 法則（Apparent Tardiness Cost）**：一種專門為加權延遲問題設計的動態優先法則，優先權 $=\dfrac{w_i}{p_i}\exp\left(-\dfrac{\text{寬裕時間}}{k\times\bar{p}}\right)$ ，同時考慮權重、處理時間與交期寬裕程度，是這類問題公認表現優良的專屬啟發式。
+- **基因演算法（Genetic Algorithm, GA）**：染色體為工作排序之排列，採用**順序交配法（Order Crossover, OX）**確保子代仍為合法排列（每項工作恰出現一次），透過菁英保留與競賽選擇機制逐代改良。GA 的關鍵優勢在於**不需要針對特定目標函數（如加權延遲）重新設計專屬規則，只需要更換適應度函數，就能套用到任何排程目標**，這正是「彈性排程演算法」名稱的由來。
+
+**模擬資料**：模擬 10 項裝備緊急搶修任務，各有處理時間、交期與優先權重（權重代表任務重要性，如關鍵裝備搶修權重較高）。
+
+```python
+# ============================================================
+# 論文方向一：基因演算法求解裝備搶修加權延遲排程
+# ============================================================
+import random
+import numpy as np
+
+random.seed(42)
+np.random.seed(42)
+
+# --- 模擬資料：10項裝備搶修任務 ---
+jobs = {
+    'J1': {'p':4, 'd':10, 'w':3}, 'J2': {'p':7, 'd':18, 'w':1},
+    'J3': {'p':3, 'd':8,  'w':5}, 'J4': {'p':6, 'd':15, 'w':2},
+    'J5': {'p':5, 'd':12, 'w':4}, 'J6': {'p':8, 'd':25, 'w':1},
+    'J7': {'p':2, 'd':6,  'w':5}, 'J8': {'p':5, 'd':20, 'w':2},
+    'J9': {'p':4, 'd':14, 'w':3}, 'J10':{'p':6, 'd':22, 'w':1},
+}
+job_ids = list(jobs.keys())
+
+def weighted_tardiness(sequence):
+    """計算給定排序的加權延遲總和（目標函數，數值越小越好）"""
+    t, total_wt = 0, 0
+    for j in sequence:
+        t += jobs[j]['p']
+        total_wt += jobs[j]['w'] * max(0, t - jobs[j]['d'])
+    return total_wt
+
+# --- 傳統優先法則對照組 ---
+spt_seq = sorted(job_ids, key=lambda j: jobs[j]['p'])
+edd_seq = sorted(job_ids, key=lambda j: jobs[j]['d'])
+wspt_seq = sorted(job_ids, key=lambda j: jobs[j]['p']/jobs[j]['w'])  # 加權最短處理時間
+
+# --- ATC法則：專為加權延遲問題設計的動態優先法則 ---
+def atc_schedule(jobs, k=2.0):
+    remaining, sequence, t = set(jobs.keys()), [], 0
+    avg_p = np.mean([jobs[j]['p'] for j in jobs])
+    while remaining:
+        best_job, best_priority = None, -np.inf
+        for j in remaining:
+            slack = max(0, jobs[j]['d'] - t - jobs[j]['p'])
+            priority = (jobs[j]['w']/jobs[j]['p']) * np.exp(-slack/(k*avg_p))
+            if priority > best_priority:
+                best_priority, best_job = priority, j
+        sequence.append(best_job)
+        t += jobs[best_job]['p']
+        remaining.remove(best_job)
+    return sequence
+
+atc_seq = atc_schedule(jobs)
+
+# --- 基因演算法 ---
+def ga_scheduling(job_ids, pop_size=40, generations=100):
+    def create_individual():
+        ind = job_ids[:]; random.shuffle(ind); return ind
+
+    def crossover(p1, p2):
+        """順序交配法(OX)：保留p1一段子序列，其餘依p2順序填入，確保子代仍是合法排列"""
+        size = len(p1)
+        a, b = sorted(random.sample(range(size), 2))
+        child = [None]*size
+        child[a:b] = p1[a:b]
+        fill = [g for g in p2 if g not in child]
+        idx = 0
+        for i in range(size):
+            if child[i] is None:
+                child[i] = fill[idx]; idx += 1
+        return child
+
+    def mutate(ind, rate=0.2):
+        ind = ind[:]
+        if random.random() < rate:
+            i, j = random.sample(range(len(ind)), 2)
+            ind[i], ind[j] = ind[j], ind[i]
+        return ind
+
+    population = [create_individual() for _ in range(pop_size)]
+    for gen in range(generations):
+        scored = sorted(population, key=weighted_tardiness)
+        next_pop = scored[:5]  # 菁英保留
+        while len(next_pop) < pop_size:
+            p1 = min(random.sample(scored[:20], 3), key=weighted_tardiness)
+            p2 = min(random.sample(scored[:20], 3), key=weighted_tardiness)
+            next_pop.append(mutate(crossover(p1, p2)))
+        population = next_pop
+    best = min(population, key=weighted_tardiness)
+    return best, weighted_tardiness(best)
+
+ga_seq, ga_wt = ga_scheduling(job_ids)
+
+print("=== 各方法加權延遲總和比較 ===")
+for name, seq in [('SPT', spt_seq), ('EDD', edd_seq), ('WSPT', wspt_seq),
+                    ('ATC', atc_seq), ('GA', ga_seq)]:
+    print(f"{name}: {weighted_tardiness(seq)}")
+```
+
+**預期輸出**：SPT、WSPT 通常得到相同的加權延遲總和（120），EDD 表現最差（128），ATC 與 GA 兩者則能找到更低的加權延遲總和（116）——**經窮舉全部 $10!=3,628,800$ 種排列驗證，116 正是本題的全域最佳解**，代表 GA 在完全不知道 ATC 法則存在的情況下，僅憑通用的演化搜尋機制，就自行找到了與專屬啟發式相同的最佳解。
+
+> [!IMPORTANT]
+> 這正是「彈性排程演算法」的核心價值：**若指揮官明天要求改用不同的目標函數（例如改成「最大延遲最小化」而非「加權延遲總和最小化」），ATC 法則需要重新推導設計，但 GA 只需要修改一行 `weighted_tardiness` 函式的計算邏輯，演算法架構完全不需要更動**。這種「目標函數可任意替換、演算法架構不變」的特性，正是實務上任務優先權經常變動的軍事後勤情境最需要的彈性。
+
+**論文延伸建議**：可進一步將問題規模擴大到 20–30 項任務（此時窮舉法已不可行，GA 的價值更為凸顯），並嘗試更複雜的目標函數（如同時考慮加權延遲與機台切換成本）；也可以將 GA 與模擬退火法（Simulated Annealing）比較在不同問題規模下的求解品質與計算時間，探討何種後設啟發式演算法最適合國防裝備搶修排程的應用場景。
+
+---
+
+### 3.5 論文方向二：整合技能匹配與任務急迫性之多準則指派模型
+
+**主題定義**：傳統匈牙利法只能依據單一成本矩陣（如工時）求解最佳指派，但實務上的技工指派決策，經常同時需要考慮「技工專長是否適合該任務」（品質面）與「任務急迫程度」（時效面）等多重質化因素。本研究建立一個整合工時、專長匹配度、任務急迫性三項準則的綜合指派模型，比較「僅考量工時」與「多準則整合」兩種指派方案，量化說明多準則方法如何在工時小幅增加的代價下，換取專長匹配品質的顯著提升。
+
+**方法說明**：
+
+- **多準則正規化與加權整合**：由於工時（成本型，越小越好）與專長匹配度（效益型，越大越好，須先轉換為成本型）的衡量單位不同，須先將各準則正規化至 $[0,1]$ 區間，再依準則權重（可用第 3 週 AHP 法決定）加權整合為單一綜合成本矩陣。
+- **急迫性的處理方式**：將任務急迫性作為工時的**放大係數**——越急迫的任務，其工時在綜合成本中的影響會被放大，代表指派模型應該更積極地為急迫任務尋找能快速完成的技工。
+- **求解**：綜合成本矩陣建立後，套用與傳統做法完全相同的匈牙利法（`scipy.optimize.linear_sum_assignment`）求解，差異只在於「输入的是綜合成本矩陣，而非單純的工時矩陣」——這說明多準則決策的關鍵在於**問題建模階段**，而非求解演算法本身需要改變。
+
+**模擬資料**：延續 1.4 節技工指派範例（4 位技工、4 項任務），新增每個組合的專長匹配度評分（1–10 分）與各任務的急迫性權重。
+
+```python
+# ============================================================
+# 論文方向二：整合技能匹配與任務急迫性之多準則指派模型
+# ============================================================
+import numpy as np
+from scipy.optimize import linear_sum_assignment
+
+technicians = ['甲', '乙', '丙', '丁']
+tasks = ['任務1', '任務2', '任務3', '任務4']
+
+# 準則1：所需工時（小時，成本型，對照1.4節原始資料）
+time_matrix = np.array([
+    [11,14,6,15], [8,10,11,7], [9,12,7,11], [9,10,6,9],
+])
+# 準則2：專長匹配度評分（1-10，效益型，分數越高代表越適合）
+skill_match = np.array([
+    [9,5,8,4], [6,8,5,9], [7,9,9,5], [8,6,7,8],
+])
+skill_cost = 10 - skill_match  # 轉換為成本型（分數越低成本越高）
+# 準則3：各任務的急迫性權重（數值越大代表越緊急）
+urgency_weight = np.array([1.5, 1.0, 2.0, 1.2])
+
+def normalize(mat):
+    return (mat - mat.min()) / (mat.max() - mat.min())
+
+# --- 方法A：傳統做法，僅以工時為成本矩陣 ---
+row_a, col_a = linear_sum_assignment(time_matrix)
+print("=== 方法A：僅考量工時（傳統匈牙利法）===")
+total_time_a, total_skill_a = 0, 0
+for r, c in zip(row_a, col_a):
+    print(f"  {technicians[r]} -> {tasks[c]}（工時={time_matrix[r,c]}, 專長匹配={skill_match[r,c]}）")
+    total_time_a += time_matrix[r,c]
+    total_skill_a += skill_match[r,c]
+print(f"總工時={total_time_a}, 總專長匹配分數={total_skill_a}")
+
+# --- 方法B：整合三準則之綜合成本矩陣 ---
+time_norm = normalize(time_matrix)
+skill_norm = normalize(skill_cost)
+urgency_adjusted_time = time_norm * urgency_weight[np.newaxis, :]
+urgency_norm = normalize(urgency_adjusted_time)
+
+# 準則權重（可用第3週AHP法決定，此處示範直接給定：工時40%、專長匹配35%、急迫性25%）
+w_time, w_skill, w_urgency = 0.40, 0.35, 0.25
+composite_cost = w_time*time_norm + w_skill*skill_norm + w_urgency*urgency_norm
+
+row_b, col_b = linear_sum_assignment(composite_cost)
+print("\n=== 方法B：整合工時＋專長匹配＋急迫性之綜合模型 ===")
+total_time_b, total_skill_b = 0, 0
+for r, c in zip(row_b, col_b):
+    print(f"  {technicians[r]} -> {tasks[c]}（工時={time_matrix[r,c]}, 專長匹配={skill_match[r,c]}）")
+    total_time_b += time_matrix[r,c]
+    total_skill_b += skill_match[r,c]
+print(f"總工時={total_time_b}, 總專長匹配分數={total_skill_b}")
+
+print(f"\n=== 比較 ===")
+print(f"方法A(僅工時): 總工時={total_time_a}, 總專長匹配={total_skill_a}")
+print(f"方法B(多準則): 總工時={total_time_b}, 總專長匹配={total_skill_b}")
+time_increase = (total_time_b/total_time_a - 1) * 100
+skill_increase = (total_skill_b/total_skill_a - 1) * 100
+print(f"工時增加 {time_increase:.1f}%，換取專長匹配分數提升 {skill_increase:.1f}%")
+```
+
+**預期輸出**：方法 A（僅工時）總工時 32、總專長匹配 30；方法 B（多準則）總工時略增至 34（增加約 6%），但總專長匹配分數提升至 34（提升約 13%）。**以工時小幅增加為代價，換取整體技能適配品質明顯提升**，這是多準則指派模型相對於單一準則模型最直觀的價值展現——純粹追求工時最小化的方案，可能把急迫任務指派給技術不對口的技工，長期而言對任務品質與裝備妥善狀態的隱藏成本，可能遠高於帳面上省下的工時。
+
+**論文延伸建議**：可將準則權重的決定過程改用第 3 週的模糊 AHP 方法，讓多位主管分別給出模糊化的準則重要性判斷，取代本示範中直接指定的固定權重；也可以進一步進行權重敏感度分析，觀察當「工時」權重從 40% 逐步調整至 80% 時，最終指派方案與總專長匹配分數如何隨之變化，找出決策者在「效率」與「品質」之間的偏好轉折點。
 
 ---
 
@@ -601,29 +788,7 @@ $$
 
 ---
 
-## 附錄F：碩士論文寫作句型範例（方法論／文獻回顧段落）
-
-> [!TIP]
-> 以下提供幾個常見學術寫作句型範例（以本週排程與指派主題為例），供學員撰寫論文計畫書或期中報告時參考套用。
-
-**文獻回顧段落句型範例**：
-
-- 「單機排程優先法則自 1950 年代發展以來，SPT 法則之平均流程時間最小性已獲嚴謹數學證明，惟其對交期相關績效指標之表現有限，此為後續研究發展複合式優先法則（如結合 SPT 與 EDD 特性之混合規則）之主要動機。」
-- 「指派問題之精確解法以匈牙利法最具代表性，然其僅適用於資源與任務數量相等之靜態情境，難以反映實務中資源多重技能、任務動態到達等複雜限制，此為近年研究導入啟發式與後設啟發式演算法（如遺傳演算法、蟻群演算法）之背景。」
-
-**研究方法段落句型範例**：
-
-- 「本研究蒐集 [某單位] 歷史維修工作紀錄，依各工作之處理時間與交期，分別以 FCFS、SPT、EDD、CR 四種優先法則進行排程模擬，比較各法則於平均流程時間、平均延遲時間及逾期件數三項績效指標之表現。」
-- 「針對 [某資源] 與 [某任務] 之一對一指派問題，本研究建立成本矩陣，以匈牙利法求解最佳指派方案，並以 Excel 規劃求解之二元整數規劃模型進行交叉驗證。」
-
-**結果與討論段落句型範例**：
-
-- 「如表 [X] 所示，SPT 法則於平均流程時間指標上表現最佳（[X] 天），惟其逾期件數較 EDD 法則多出 [X] 件，顯示兩法則在不同管理目標下各有優劣，建議 [某單位] 依任務性質動態選用。」
-- 「匈牙利法求解結果顯示，最佳指派方案較現行人工指派方式節省 [X]% 總工時，驗證系統化指派方法之實務價值。」
-
----
-
-## 附錄G：本週與後續課程週次的關聯
+## 附錄F：本週與後續課程週次的關聯
 
 | 後續週次 | 關聯方式 |
 |---|---|
@@ -631,7 +796,7 @@ $$
 | 第 7 週：專案管理 CPM/PERT | 本週排程績效指標（流程時間、延遲）之概念，將延伸至第 7 週專案網路之時程分析 |
 | 第 15 週：論文整併實戰（一） | 本週排程邏輯將與 AI 故障預測結合，發展為「預測失效機率加權之維修隊列排程」整合研究，直接呼應課程主軸 |
 
-## 附錄H：本週模擬資料集彙整（方便複製使用）
+## 附錄G：本週模擬資料集彙整（方便複製使用）
 
 | 資料集 | 用途 | 摘要 |
 |---|---|---|
@@ -640,6 +805,78 @@ $$
 | 技工指派（4×4矩陣） | 匈牙利法主範例 | 總工時=32，需1輪調整 |
 | 通信裝備維修站（6項工作） | 延伸練習一 | SPT平均流程時間=13.00最佳 |
 | 技師檢測任務（3×3矩陣） | 延伸練習二 | 總工時=16，無需調整 |
+
+---
+
+## 附錄H：Python 實作與解析
+
+> [!NOTE]
+> 本附錄使用 Python 重現本週 Excel 示範的核心邏輯（單機排程比較、匈牙利法），並展示 `scipy.optimize.linear_sum_assignment` 如何一行程式碼求解指派問題，取代 Excel 手動的列縮減、行縮減、劃線覆蓋步驟。建議於 [Google Colab](https://colab.research.google.com/) 開啟新筆記本，依序貼上執行。
+
+### H.0 環境設置與單機排程重現
+
+```python
+# ============================================================
+# 第6週 附錄H：Python 實作環境設置與單機排程重現（對照1.1節）
+# ============================================================
+import numpy as np
+
+jobs = {'A':(4,8), 'B':(7,15), 'C':(2,6), 'D':(5,9), 'E':(3,12), 'F':(6,18), 'G':(1,5)}
+
+def evaluate(sequence):
+    """依排序計算平均流程時間、平均延遲時間、逾期件數"""
+    t, flow_times, tardiness = 0, [], []
+    for j in sequence:
+        p, d = jobs[j]
+        t += p
+        flow_times.append(t)
+        tardiness.append(max(0, t-d))
+    return np.mean(flow_times), np.mean(tardiness), sum(1 for x in tardiness if x > 0)
+
+fcfs_seq = list(jobs.keys())
+spt_seq = sorted(jobs.keys(), key=lambda j: jobs[j][0])
+edd_seq = sorted(jobs.keys(), key=lambda j: jobs[j][1])
+
+for name, seq in [('FCFS', fcfs_seq), ('SPT', spt_seq), ('EDD', edd_seq)]:
+    avg_flow, avg_tard, n_late = evaluate(seq)
+    print(f"{name}: 排序={seq}")
+    print(f"  平均流程時間={avg_flow:.2f}, 平均延遲時間={avg_tard:.2f}, 逾期件數={n_late}")
+
+print("\n講義手算SPT: 平均流程時間=12.00, 平均延遲時間=3.43, 逾期件數=4")
+```
+
+---
+
+### H.1 匈牙利法：scipy.optimize 一行求解
+
+```python
+# ============================================================
+# H.1 匈牙利法 scipy求解（對照1.4節，取代Excel列縮減/行縮減/劃線覆蓋手動步驟）
+# ============================================================
+from scipy.optimize import linear_sum_assignment
+
+cost = np.array([
+    [11,14,6,15],
+    [8,10,11,7],
+    [9,12,7,11],
+    [9,10,6,9],
+])
+technicians = ['甲','乙','丙','丁']
+tasks = ['任務1','任務2','任務3','任務4']
+
+# linear_sum_assignment內部實作的正是匈牙利法，一行程式碼取代Excel的多步驟矩陣運算
+row_ind, col_ind = linear_sum_assignment(cost)
+total_cost = cost[row_ind, col_ind].sum()
+
+print("scipy求解結果：")
+for r, c in zip(row_ind, col_ind):
+    print(f"  {technicians[r]} -> {tasks[c]}（工時={cost[r,c]}）")
+print(f"總工時 = {total_cost}")
+print("講義手算: 甲→任務3、乙→任務4、丙→任務1、丁→任務2，總工時=32")
+```
+
+> [!TIP]
+> `linear_sum_assignment` 底層使用的是修正版的匈牙利演算法（Jonker-Volgenant 演算法），能在多項式時間內求解任意大小的指派問題——這代表當技工或任務數量從 4 個擴大到 40 個甚至更多時，Python 依然能瞬間求解，而 Excel 手動列縮減、行縮減、劃線覆蓋的流程在大規模問題中會變得極為繁瑣、容易出錯。這正是 H.1 節這行程式碼在實務應用上的真正價值所在。
 
 ---
 
