@@ -1164,7 +1164,9 @@ $$\text{RSFE}_t = \sum_{i=2}^{t}e_i$$
 5. 按「確定」，Excel 會自動產生一欄預測值。
 
 <img width="390" height="213" alt="image" src="https://github.com/user-attachments/assets/7f2685d1-1074-47b5-9b30-c4a129e233e6" />
+
 <img width="399" height="538" alt="image" src="https://github.com/user-attachments/assets/3cbec3d9-6c96-449f-832b-91a3bc8fb9fd" />
+
 <img width="591" height="254" alt="image" src="https://github.com/user-attachments/assets/15d4377f-29b6-45df-87fc-4e0c014cd930" />
 
 > [!CAUTION]
