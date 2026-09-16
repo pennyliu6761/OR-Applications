@@ -627,6 +627,10 @@ $$\text{RSFE}_t = \sum_{i=2}^{t}e_i$$
 
 規劃求解會自動調整 G2 儲存格的 $\alpha$ 值，直到 G4（誤差平方和）達到最小。您應該會得到一個介於 0 到 1 之間的最佳 $\alpha$（本例資料因為波動較大且隱含上升趨勢，最佳 $\alpha$ 通常會落在較高區間，如 0.4–0.6 附近，實際數值會因四捨五入誤差略有差異）。
 
+<img width="1287" height="629" alt="image" src="https://github.com/user-attachments/assets/58e39e06-d552-4dfe-9e4e-daa8ee6b1930" />
+<img width="1259" height="422" alt="image" src="https://github.com/user-attachments/assets/a66347f3-2524-4580-9b65-dd5faec493c8" />
+
+
 > [!CAUTION]
 > **常見錯誤 1**：忘記把 `$G$2` 設定為絕對參照，導致公式往下複製時跑掉，變成每一列都參照到不同（甚至空白）的儲存格，跑出來的 SES 預測值會全部錯誤或出現 0。**解決方式**：檢查 C 欄公式，確認每一列都是 `$G$2`（有錢字號固定），不是 `G2`、`G3`、`G4`……。
 >
