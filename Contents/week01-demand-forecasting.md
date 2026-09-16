@@ -1163,6 +1163,10 @@ $$\text{RSFE}_t = \sum_{i=2}^{t}e_i$$
 4. 「輸出範圍」指定一個空白儲存格作為結果放置的起點，勾選「圖表輸出」可同時產生對照圖。
 5. 按「確定」，Excel 會自動產生一欄預測值。
 
+<img width="390" height="213" alt="image" src="https://github.com/user-attachments/assets/7f2685d1-1074-47b5-9b30-c4a129e233e6" />
+<img width="399" height="538" alt="image" src="https://github.com/user-attachments/assets/3cbec3d9-6c96-449f-832b-91a3bc8fb9fd" />
+<img width="591" height="254" alt="image" src="https://github.com/user-attachments/assets/15d4377f-29b6-45df-87fc-4e0c014cd930" />
+
 > [!CAUTION]
 > **常見錯誤**：忘記阻尼因子 ＝ $1-\alpha$ 這個轉換關係，直接把想要的 $\alpha$ 值填入阻尼因子欄位，會導致算出來的結果剛好跟預期相反（ $\alpha$ 太小時模型反而反應過度， $\alpha$ 太大時模型反而過度平滑）。建議使用這個內建工具時，先在旁邊空白儲存格寫一個提醒公式 `=1-0.2`，確認數字無誤後再手動輸入到對話視窗中。
 
