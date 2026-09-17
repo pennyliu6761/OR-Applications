@@ -13,5 +13,6 @@
 - [07 — 專案管理](./Contents/week07-cpm-pert.md)
 - [08 — 等候線理論](./Contents/week08-queueing.md)
 - [09 — 資料前處理與特徵工程](./Contents/week09-data-preprocessing.md)
-
+- [10 — 迴歸與分類基礎](./Contents/week10-regression.md)
+- [11 — 非監督學習－分群分析與降維技術](./Contents/week11-clustering.md)
   
