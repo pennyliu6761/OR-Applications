@@ -14,5 +14,5 @@
 - [08 — 等候線理論](./Contents/week08-queueing.md)
 - [09 — 資料前處理與特徵工程](./Contents/week09-data-preprocessing.md)
 - [10 — 高效梯度提升機XGBoost_LightGBM與可解釋性AI_XAI_SHAP](./Contents/Week10_高效梯度提升機XGBoost_LightGBM與可解釋性AI_XAI_SHAP.md)
-- [11 — 資料前處理與特徵工程](./Contents/Week11_混合式AI決策架構_結構方程模型結合類神經網路.md)
+- [11 — 混合式AI決策架構_結構方程模型結合類神經網路](./Contents/Week11_混合式AI決策架構_結構方程模型結合類神經網路.md)
   
