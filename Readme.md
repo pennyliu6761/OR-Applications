@@ -15,4 +15,5 @@
 - [09 — 資料前處理與特徵工程](./Contents/week09-data-preprocessing.md)
 - [10 — 迴歸與分類基礎](./Contents/week10-regression.md)
 - [11 — 非監督學習－分群分析與降維技術](./Contents/week11-clustering.md)
+- [12 — 決策樹](./Contents/week12-decision-tree.md)
   
