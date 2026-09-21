@@ -16,4 +16,7 @@
 - [10 — 迴歸與分類基礎](./Contents/week10-regression.md)
 - [11 — 非監督學習－分群分析與降維技術](./Contents/week11-clustering.md)
 - [12 — 決策樹](./Contents/week12-decision-tree.md)
-  
+- [13 — 深度學習基礎與類神經網路](./Contents/week13-neural-networks.md)
+- [14 — 時間序列分析與序列模型 ARIMA & LSTM](./Contents/week14-time-series.md)
+- [15 — 預測性維護整合研究](./Contents/week15-predictive-maintenance.md)
+- [16 — 智慧庫存動態補給整合研究](./Contents/week16-inventory-integration.md)
