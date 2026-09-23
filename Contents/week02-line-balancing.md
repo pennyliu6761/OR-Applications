@@ -284,10 +284,10 @@ $$
 | 站 5 | I | 6 | 6 | 36 |
 
 $$
-\text{Efficiency} = \frac{43}{5 \times 12} \times 100 \text{%} = \frac{43}{60} \times 100 \text{%} = 71.67 \text{%}
+\text{Efficiency} = \frac{43}{5 \times 12} \times 100 \\% = \frac{43}{60} \times 100 \\% = 71.67 \\%
 $$
 $$
-\text{Balance Delay} = 100 \text{%} - 71.67 \text{%} = 28.33 \text{%}
+\text{Balance Delay} = 100 \\% - 71.67 \\% = 28.33 \\%
 $$
 $$
 SI = \sqrt{0+25+1+25+36} = \sqrt{87} = 9.327
