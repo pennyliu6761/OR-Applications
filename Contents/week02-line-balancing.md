@@ -800,7 +800,7 @@ print(f"GA解       : {n_st}站, SI={si:.3f}")
 **預期輸出**：GA 應能在 60 個世代內收斂至 3 個工作站的解，平滑係數約為 2.828——**與 ILP 精確解完全相同**，證明多目標 GA 成功跳脫了 RPW 法陷入的局部最佳解。
 
 <p align="center">
-   <img alt="image" src="https://github.com/user-attachments/assets/52990502-da05-49b7-b901-f4baba16ff0e" />
+   <img width="778" height="182" alt="image" src="https://github.com/user-attachments/assets/52990502-da05-49b7-b901-f4baba16ff0e" />
 </p>
 
 **論文延伸建議**：可進一步將此 GA 應用於作業元素數量更多（如 20–30 項）、ILP 求解時間過長的大型維修線，比較 GA 與 3.5 節「混合啟發式與 ILP」方法在解品質與計算時間上的優劣；也可以嘗試調整適應度函數的權重 $w_1$ 、 $w_2$ ，觀察「站數優先」與「負荷平均優先」兩種決策傾向如何影響最終找到的解，這種**權重敏感度分析**是多目標最佳化論文常見的補充實驗。
