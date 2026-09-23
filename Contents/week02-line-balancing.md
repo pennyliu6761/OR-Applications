@@ -249,7 +249,7 @@ $$
 **平衡效率（Balance Efficiency）**：
 
 $$
-\text{Efficiency} = \frac{\sum t_i}{N \times CT} \times 100 \%
+\text{Efficiency} = \frac{\sum t_i}{N \times CT} \times 100 \text{%}
 $$
 
 其中 $N$ 為實際使用的工作站數量。效率越接近 100%，代表產線的閒置時間越少、資源利用率越高。
