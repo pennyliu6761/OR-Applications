@@ -249,7 +249,7 @@ $$
 **平衡效率（Balance Efficiency）**：
 
 $$
-\text{Efficiency} = \frac{\sum t_i}{N \times CT} \times 100\%
+\text{Efficiency} = \frac{\sum t_i}{N \times CT} \times 100 \%
 $$
 
 其中 $N$ 為實際使用的工作站數量。效率越接近 100%，代表產線的閒置時間越少、資源利用率越高。
@@ -257,7 +257,7 @@ $$
 **平衡延遲（Balance Delay）**：
 
 $$
-\text{Balance Delay} = 1 - \text{Efficiency} = \frac{N \times CT - \sum t_i}{N \times CT} \times 100\%
+\text{Balance Delay} = 1 - \text{Efficiency} = \frac{N \times CT - \sum t_i}{N \times CT} \times 100 \%
 $$
 
 平衡延遲即效率的補數，代表產線因為工作站間負荷不均，所損失的產能百分比。
@@ -284,10 +284,10 @@ $$
 | 站 5 | I | 6 | 6 | 36 |
 
 $$
-\text{Efficiency} = \frac{43}{5 \times 12} \times 100\% = \frac{43}{60} \times 100\% = 71.67\%
+\text{Efficiency} = \frac{43}{5 \times 12} \times 100 \% = \frac{43}{60} \times 100 \% = 71.67 \%
 $$
 $$
-\text{Balance Delay} = 100\% - 71.67\% = 28.33\%
+\text{Balance Delay} = 100 \% - 71.67 \% = 28.33 \%
 $$
 $$
 SI = \sqrt{0+25+1+25+36} = \sqrt{87} = 9.327
