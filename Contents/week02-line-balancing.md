@@ -936,7 +936,7 @@ print(f"混合法相對純ILP之加速倍數: {speedup:.2f}倍（解品質相同
 **預期輸出**：這組隨機生成的 20 項作業網路中，RPW 法通常會得到比理論最小站數多 1 站的解（啟發式的典型表現），而純 ILP 與混合法皆能找到理論最小站數的全域最佳解——**但混合法由於搜尋空間被 RPW 解大幅收斂，計算時間通常僅為純 ILP 的數分之一到十分之一**，具體加速倍數會因隨機生成的網路結構而異，但方向性結論穩定成立。
 
 <p align="center">
-<img style="max-width: 60%; height: auto;" alt="image" src="https://github.com/user-attachments/assets/8f13bd0c-71f7-431c-9f26-840628c34cec" />
+   <img style="max-width: 60%; height: auto;" alt="image" src="https://github.com/user-attachments/assets/8f13bd0c-71f7-431c-9f26-840628c34cec" />
 </p>
 
 **論文延伸建議**：可將此混合方法進一步應用於更大規模的問題（50、100 項作業元素），系統性記錄「問題規模 vs. 純 ILP／混合法計算時間」的成長曲線，量化混合方法在大規模問題上的優勢是否會隨規模擴大而更加顯著；也可以嘗試用 3.4 節的 GA 解取代 RPW 解作為 ILP 的上界輸入，比較「RPW+ILP」與「GA+ILP」兩種混合策略何者在計算時間與解品質上表現更好，這是結合本週兩個論文方向、進一步提升研究貢獻度的可行整合方案。
@@ -1116,7 +1116,7 @@ print("總作業時間:", sum(tasks_time.values()))
 ```
 
 <p align="center">
-<img style="max-width: 60%; height: auto;" alt="image" src="https://github.com/user-attachments/assets/062fd8aa-e339-4adc-86dd-2f3bc4574ddd" />
+   <img style="max-width: 60%; height: auto;" alt="image" src="https://github.com/user-attachments/assets/062fd8aa-e339-4adc-86dd-2f3bc4574ddd" />
 </p>
 
 ---
