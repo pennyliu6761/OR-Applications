@@ -104,9 +104,7 @@
 
 這個前置關係可以整理成文字描述的網路結構：A 之後可分為 B、C 兩條支線並行（B→D、C→E），兩條支線在 F 匯合，F 之後又分為 G、H 兩條支線並行，最後在 I 匯合。這種「先分岔、後匯合」的結構在裝備維修作業中相當常見（例如底盤與動力系統可並行拆裝，最後才組裝測試）。
 
-<p align="center">
-<img width="876" height="486" alt="image" src="https://github.com/user-attachments/assets/d61198d6-062d-43ce-aa45-d651ace882b0" />
-</p>
+<img width="850" height="461" alt="image" src="https://github.com/user-attachments/assets/0121cf6c-3658-48e9-b40d-7b3d18c2241e" />
 
 > [!IMPORTANT]
 > 前置關係圖只記錄**直接**前置作業，但在計算後續的 RPW（1.4 節）時，需要用到**全部**（直接＋間接）的後續作業，兩者不要混淆。例如 A 的直接後續作業是 B、C，但 A 的全部後續作業還包含 D、E、F、G、H、I（因為這些作業都必須等到 A 完成後，經過一連串的前置關係才能進行）。
