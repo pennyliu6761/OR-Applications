@@ -105,7 +105,7 @@
 這個前置關係可以整理成文字描述的網路結構：A 之後可分為 B、C 兩條支線並行（B→D、C→E），兩條支線在 F 匯合，F 之後又分為 G、H 兩條支線並行，最後在 I 匯合。這種「先分岔、後匯合」的結構在裝備維修作業中相當常見（例如底盤與動力系統可並行拆裝，最後才組裝測試）。
 
 <p align="center">
-   style="max-width: 80%; height: auto;" alt="image" src="https://github.com/user-attachments/assets/9147c0c2-00af-4187-a7a0-52ab100e6221" />
+   <img style="max-width: 80%; height: auto;" alt="image" src="https://github.com/user-attachments/assets/9147c0c2-00af-4187-a7a0-52ab100e6221" />
 </p>
 
 > [!IMPORTANT]
