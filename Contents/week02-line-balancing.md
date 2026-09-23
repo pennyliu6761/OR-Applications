@@ -799,7 +799,9 @@ print(f"GA解       : {n_st}站, SI={si:.3f}")
 
 **預期輸出**：GA 應能在 60 個世代內收斂至 3 個工作站的解，平滑係數約為 2.828——**與 ILP 精確解完全相同**，證明多目標 GA 成功跳脫了 RPW 法陷入的局部最佳解。
 
+<p align="center">
 <img style="max-width: 60%; height: auto;" alt="image" src="https://github.com/user-attachments/assets/ab61bf81-793f-4f46-8a65-14a1aedec9fe" />
+</p>
 
 **論文延伸建議**：可進一步將此 GA 應用於作業元素數量更多（如 20–30 項）、ILP 求解時間過長的大型維修線，比較 GA 與 3.5 節「混合啟發式與 ILP」方法在解品質與計算時間上的優劣；也可以嘗試調整適應度函數的權重 $w_1$ 、 $w_2$ ，觀察「站數優先」與「負荷平均優先」兩種決策傾向如何影響最終找到的解，這種**權重敏感度分析**是多目標最佳化論文常見的補充實驗。
 
@@ -933,7 +935,9 @@ print(f"混合法相對純ILP之加速倍數: {speedup:.2f}倍（解品質相同
 
 **預期輸出**：這組隨機生成的 20 項作業網路中，RPW 法通常會得到比理論最小站數多 1 站的解（啟發式的典型表現），而純 ILP 與混合法皆能找到理論最小站數的全域最佳解——**但混合法由於搜尋空間被 RPW 解大幅收斂，計算時間通常僅為純 ILP 的數分之一到十分之一**，具體加速倍數會因隨機生成的網路結構而異，但方向性結論穩定成立。
 
+<p align="center">
 <img style="max-width: 60%; height: auto;" alt="image" src="https://github.com/user-attachments/assets/8f13bd0c-71f7-431c-9f26-840628c34cec" />
+</p>
 
 **論文延伸建議**：可將此混合方法進一步應用於更大規模的問題（50、100 項作業元素），系統性記錄「問題規模 vs. 純 ILP／混合法計算時間」的成長曲線，量化混合方法在大規模問題上的優勢是否會隨規模擴大而更加顯著；也可以嘗試用 3.4 節的 GA 解取代 RPW 解作為 ILP 的上界輸入，比較「RPW+ILP」與「GA+ILP」兩種混合策略何者在計算時間與解品質上表現更好，這是結合本週兩個論文方向、進一步提升研究貢獻度的可行整合方案。
 
@@ -1111,7 +1115,9 @@ print("作業元素:", tasks_time)
 print("總作業時間:", sum(tasks_time.values()))
 ```
 
+<p align="center">
 <img style="max-width: 60%; height: auto;" alt="image" src="https://github.com/user-attachments/assets/062fd8aa-e339-4adc-86dd-2f3bc4574ddd" />
+</p>
 
 ---
 
