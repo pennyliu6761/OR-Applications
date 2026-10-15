@@ -656,6 +656,87 @@ for name, signal in [("Shewhart管制圖", shewhart_signal),
 
 **預期輸出**：Shewhart 管制圖通常要延遲約 80 餘期才能偵測到這個 1 個標準差的飄移（甚至可能在模擬期間內完全漏檢），而 EWMA 與 CUSUM 通常僅需延遲約 19 期左右即可偵測到——**偵測速度提升達 4 倍以上**，具體且量化地驗證了 1.2 節「Shewhart 圖對小幅度飄移不敏感」的理論提醒，也證實了原始論文方向「改良型管制圖較傳統管制圖更適合偵測小幅度、緩慢的製程飄移」的假設。
 
+**繪製管制圖**
+
+```python
+import matplotlib.pyplot as plt
+
+# --- 1. Calculate EWMA statistics and dynamic control limits ---
+ewma_stats = []
+ucl_ewma_list = []
+lcl_ewma_list = []
+
+lam, L = 0.2, 2.7
+z = mu0
+for t, x in enumerate(data):
+    z = lam * x + (1 - lam) * z
+    ewma_stats.append(z)
+    factor = np.sqrt(lam / (2 - lam) * (1 - (1 - lam)**(2 * (t + 1))))
+    ucl_ewma_list.append(mu0 + L * sigma * factor)
+    lcl_ewma_list.append(mu0 - L * sigma * factor)
+
+# --- 2. Calculate CUSUM statistics ---
+k_val, h_val = 0.5 * sigma, 5 * sigma
+Cplus_list = []
+Cminus_list = []
+Cplus, Cminus = 0, 0
+for t, x in enumerate(data):
+    Cplus = max(0, Cplus + (x - mu0 - k_val))
+    Cminus = max(0, Cminus + (mu0 - k_val - x))
+    Cplus_list.append(Cplus)
+    Cminus_list.append(Cminus)
+
+# --- 3. Plotting (Using English labels to avoid missing font warnings) ---
+fig, axes = plt.subplots(3, 1, figsize=(12, 14), sharex=True)
+time_steps = np.arange(1, len(data) + 1)
+
+# (A) Shewhart Chart
+ax = axes[0]
+ax.plot(time_steps, data, marker='o', markersize=4, color='gray', alpha=0.6, label='Observed Data')
+ax.axhline(mu0, color='blue', linestyle='--', label='CL (Target)')
+ax.axhline(UCL_shewhart, color='red', linestyle='--', label='UCL (3-sigma)')
+ax.axhline(LCL_shewhart, color='red', linestyle='--', label='LCL')
+ax.axvline(true_shift_period, color='darkorange', linestyle=':', linewidth=2, label='Shift Start (T=31)')
+if shewhart_signal:
+    ax.plot(shewhart_signal, data[shewhart_signal - 1], 'ro', markersize=8, label=f'Alarm Point (T={shewhart_signal})')
+ax.set_title('Shewhart Control Chart (X-Chart)')
+ax.legend(loc='upper left')
+ax.grid(True, linestyle=':', alpha=0.6)
+
+# (B) EWMA Chart
+ax = axes[1]
+ax.plot(time_steps, ewma_stats, marker='s', markersize=4, color='purple', label='EWMA Statistic (Z_t)')
+ax.plot(time_steps, ucl_ewma_list, 'r--', label='Dynamic UCL')
+ax.plot(time_steps, lcl_ewma_list, 'r--', label='Dynamic LCL')
+ax.axhline(mu0, color='blue', linestyle='--')
+ax.axvline(true_shift_period, color='darkorange', linestyle=':', linewidth=2)
+if ewma_signal:
+    ax.plot(ewma_signal, ewma_stats[ewma_signal - 1], 'ro', markersize=8, label=f'Alarm Point (T={ewma_signal})')
+ax.set_title('EWMA Control Chart (lambda=0.2, L=2.7)')
+ax.legend(loc='upper left')
+ax.grid(True, linestyle=':', alpha=0.6)
+
+# (C) CUSUM Chart
+ax = axes[2]
+ax.plot(time_steps, Cplus_list, marker='^', markersize=4, color='green', label='Upper CUSUM (C+)')
+ax.plot(time_steps, Cminus_list, marker='v', markersize=4, color='blue', label='Lower CUSUM (C-)', alpha=0.4)
+ax.axhline(h_val, color='red', linestyle='--', label=f'Decision Interval h (5-sigma = {h_val:.4f})')
+ax.axvline(true_shift_period, color='darkorange', linestyle=':', linewidth=2)
+if cusum_signal:
+    sig_val = Cplus_list[cusum_signal - 1] if Cplus_list[cusum_signal - 1] > h_val else Cminus_list[cusum_signal - 1]
+    ax.plot(cusum_signal, sig_val, 'ro', markersize=8, label=f'Alarm Point (T={cusum_signal})')
+ax.set_title('CUSUM Chart (k=0.5, h=5)')
+ax.set_xlabel('Time Period')
+ax.legend(loc='upper left')
+ax.grid(True, linestyle=':', alpha=0.6)
+
+plt.tight_layout()
+plt.show()
+```
+<img width="1190" height="1389" alt="image" src="https://github.com/user-attachments/assets/993f1e94-79a3-4913-9788-f8fa94663fca" />
+<img width="1190" height="1389" alt="image" src="https://github.com/user-attachments/assets/f24563ff-023d-48a0-a248-0501debc5da3" />
+<img width="1190" height="1389" alt="image" src="https://github.com/user-attachments/assets/bb4cc831-6df4-44e4-a59e-aadae9ecc7e3" />
+
 **論文延伸建議**：可進一步系統性改變飄移幅度（0.25、0.5、0.75、1.0、1.5 個標準差）與 EWMA 的 $\lambda$ 、CUSUM 的 $k$ 參數，繪製「平均連串長度（Average Run Length, ARL）vs. 飄移幅度」的效能曲線，這是 SPC 學術研究評估管制圖效能的標準方法；也可以將此框架實際應用於彈藥量產線之關鍵尺寸資料，比較導入 EWMA／CUSUM 前後，不良品在被發現前的平均產出數量是否顯著下降。
 
 ---
