@@ -44,7 +44,7 @@
 
 SPC 由貝爾實驗室的休哈特（Walter A. Shewhart）於 1920 年代發展，其基本邏輯是：透過抽樣資料，持續監控製程的變異狀態，及早發現製程開始偏離正常狀態的訊號，在產出大量不合格品之前就介入處理。
 
-延伸閱讀：[統計過程控制](https://zh.wikipedia.org/zh-tw/%E7%B5%B1%E8%A8%88%E9%81%8E%E7%A8%8B%E6%8E%A7%E5%88%B6)、[品管七大手法](https://zh.wikipedia.org/zh-tw/%E5%93%81%E7%AE%A1%E4%B8%83%E5%A4%A7%E6%89%8B%E6%B3%95)（維基百科）。
+延伸閱讀：[品管七大手法](https://zh.wikipedia.org/zh-tw/%E5%93%81%E7%AE%A1%E4%B8%83%E5%A4%A7%E6%89%8B%E6%B3%95)（維基百科）。
 
 ---
 
