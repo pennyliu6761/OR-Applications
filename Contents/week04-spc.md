@@ -301,7 +301,7 @@ $$
 > [!NOTE]
 > 本週介紹的 SPC 管制圖工具，同時是六標準差「量測」階段用來蒐集現況資料的工具，也是「控制」階段用來長期監控改善成果的工具——SPC 與六標準差並非互相替代的兩套方法，而是**六標準差 DMAIC 框架中，貫穿全程的核心量化工具**。
 
-延伸閱讀：[六標準差](https://zh.wikipedia.org/zh-tw/%E5%85%AD%E6%A8%99%E6%BA%96%E5%B7%AE)、[精益六西格瑪](https://zh.wikipedia.org/wiki/%E7%B2%BE%E7%9B%8A%E5%85%AD%E8%A5%BF%E6%A0%BC%E7%91%AA)（維基百科）。
+延伸閱讀：[六標準差](https://zh.wikipedia.org/zh-tw/%E5%85%AD%E6%A8%99%E6%BA%96%E5%B7%AE)。
 
 ---
 
