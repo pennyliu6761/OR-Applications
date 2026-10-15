@@ -734,8 +734,6 @@ plt.tight_layout()
 plt.show()
 ```
 <img width="1190" height="1389" alt="image" src="https://github.com/user-attachments/assets/993f1e94-79a3-4913-9788-f8fa94663fca" />
-<img width="1190" height="1389" alt="image" src="https://github.com/user-attachments/assets/f24563ff-023d-48a0-a248-0501debc5da3" />
-<img width="1190" height="1389" alt="image" src="https://github.com/user-attachments/assets/bb4cc831-6df4-44e4-a59e-aadae9ecc7e3" />
 
 **論文延伸建議**：可進一步系統性改變飄移幅度（0.25、0.5、0.75、1.0、1.5 個標準差）與 EWMA 的 $\lambda$ 、CUSUM 的 $k$ 參數，繪製「平均連串長度（Average Run Length, ARL）vs. 飄移幅度」的效能曲線，這是 SPC 學術研究評估管制圖效能的標準方法；也可以將此框架實際應用於彈藥量產線之關鍵尺寸資料，比較導入 EWMA／CUSUM 前後，不良品在被發現前的平均產出數量是否顯著下降。
 
