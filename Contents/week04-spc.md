@@ -959,6 +959,8 @@ print(f"子群數: {len(df)}")
 print(df.head())
 ```
 
+<img width="257" height="109" alt="image" src="https://github.com/user-attachments/assets/9561c2c0-b442-483c-aefa-fceab17e25ca" />
+
 ---
 
 ### H.1 X̄-R 管制圖自動計算與繪製（對照1.2節、Excel示範一）
@@ -1000,6 +1002,8 @@ plt.grid(alpha=0.3)
 plt.show()
 ```
 
+<img width="841" height="470" alt="image" src="https://github.com/user-attachments/assets/df648c9e-6568-4d2f-b415-13258f82c421" />
+
 ---
 
 ### H.2 製程能力指標計算
@@ -1038,6 +1042,8 @@ def interpret(cpk):
 print(f"\nCpk判讀: {interpret(Cpk)}（組內短期能力）")
 print(f"Ppk判讀: {interpret(Ppk)}（整體長期績效，較低顯示子群18-20之飄移影響）")
 ```
+
+<img width="367" height="93" alt="image" src="https://github.com/user-attachments/assets/4396412a-16fc-44c2-bbb4-3ca0cc5cc0ab" />
 
 **預期輸出**：與講義手算完全一致（ $C_p=1.4118$ 、 $C_{pk}=1.3257$ 、 $P_p=1.0680$ 、 $P_{pk}=1.0029$），並可觀察到 $C_{pk}>P_{pk}$ ，驗證 1.6 節「兩者差距反映製程存在管制圖可偵測但短期能力指標會忽略的飄移」之說法。
 
