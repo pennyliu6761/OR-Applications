@@ -803,6 +803,8 @@ print(f"Hotelling T²偵測率: {sum(t2_detected[i] for i in anomaly_idx)}/{n_an
 print(f"Isolation Forest偵測率: {sum(ml_detected[i] for i in anomaly_idx)}/{n_anom}")
 ```
 
+<img width="1589" height="719" alt="image" src="https://github.com/user-attachments/assets/87e90fee-65ed-4377-a8f0-dc621fea3b10" />
+
 **預期輸出**：Hotelling $T^2$ 管制圖在此高混合情境下**完全失效**（偵測率 0/5）——原因是雙群集資料的混合共變異數矩陣被嚴重「撐大」，導致以單一橢圓範圍描述的管制界限異常寬鬆，落在兩群集之間的真實異常反而被誤判為「正常」；而 Isolation Forest **能完美偵測全部 5 筆真實異常、且無任何誤判**，因為它不需要假設資料服從單一常態分配，能直接學習「兩個分離群集才是正常」的實際資料結構。
 
 > [!IMPORTANT]
