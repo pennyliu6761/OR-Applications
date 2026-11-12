@@ -565,11 +565,11 @@ summary_table = pd.DataFrame({
     '變數名稱': numeric_features,
     '型態': ['數值型']*len(numeric_features),
     '筆數': [df_raw[c].notna().sum() for c in numeric_features],
-    '平均數': [df_raw[c].mean().round(2) for c in numeric_features],
-    '標準差': [df_raw[c].std().round(2) for c in numeric_features],
-    '最小值': [df_raw[c].min().round(2) for c in numeric_features],
-    '最大值': [df_raw[c].max().round(2) for c in numeric_features],
-    '遺失比例(%)': [(df_raw[c].isna().mean()*100).round(2) for c in numeric_features],
+    '平均數': [round(df_raw[c].mean(),2) for c in numeric_features],
+    '標準差': [round(df_raw[c].std(),2) for c in numeric_features],
+    '最小值': [round(df_raw[c].min(),2) for c in numeric_features],
+    '最大值': [round(df_raw[c].max(),2) for c in numeric_features],
+    '遺失比例(%)': [(df_raw[c].isna().mean()*100) for c in numeric_features],
 })
 print(summary_table.to_string(index=False))
 ```
