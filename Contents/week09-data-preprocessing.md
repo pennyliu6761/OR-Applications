@@ -74,7 +74,7 @@
 
 ### 1.2 離群值檢驗：IQR 法
 
-**四分位距（Interquartile Range, IQR）**： $IQR = Q_3 - Q_1$，其中 $Q_1$、$Q_3$ 分別為第一、第三四分位數。
+**四分位距（Interquartile Range, IQR）**： $IQR = Q_3 - Q_1$，其中 $Q_1$、 $Q_3$ 分別為第一、第三四分位數。
 
 **判斷準則**：
 
